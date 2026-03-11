@@ -1,0 +1,449 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comércio BES — Boa Esperança do Sul</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav>
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">Comércio<span>BES</span></a>
+      <ul class="nav-links">
+        <li><a href="#busca" class="active">🔎 Buscar</a></li>
+        <li><a href="#promos">🔥 Promoções</a></li>
+        <li><a href="#ranking">⭐ Ranking</a></li>
+        <li><a href="#mapa">🗺️ Mapa</a></li>
+      </ul>
+      <div class="nav-actions">
+        <button class="nav-icon-btn" onclick="toggleCarrinhoDrawer()" title="Carrinho" id="btn-cart-nav">
+          🛒 <span class="nav-badge" id="cart-badge"></span>
+        </button>
+        <div class="nav-user-wrapper">
+          <button class="nav-icon-btn" onclick="toggleUserMenu()" id="nav-user-btn">👤</button>
+          <div class="nav-user-menu" id="nav-user-menu"></div>
+        </div>
+      </div>
+      <button class="nav-hamburger" onclick="toggleMobileMenu()">☰</button>
+    </div>
+  </nav>
+
+  <!-- MOBILE MENU -->
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="#busca" onclick="fecharMobileMenu()">🔎 Buscar</a>
+    <a href="#promos" onclick="fecharMobileMenu()">🔥 Promoções</a>
+    <a href="#ranking" onclick="fecharMobileMenu()">⭐ Ranking</a>
+    <a href="#mapa" onclick="fecharMobileMenu()">🗺️ Mapa</a>
+    <a href="#" onclick="fecharMobileMenu(); abrirCadastroLoja()">➕ Cadastrar loja</a>
+  </div>
+
+  <!-- HERO + BUSCA -->
+  <section class="hero" id="busca">
+    <div class="hero-label">
+      <div class="dot"></div>
+      Guia Comercial Atualizado
+    </div>
+    <h1>Encontre tudo em<br><em>Boa Esperança do Sul</em></h1>
+    <p>Restaurantes, farmácias, mecânicas, pet shops e muito mais</p>
+
+    <div class="search-box">
+      <input type="text" id="search-input" placeholder="pizza, mecânico, farmácia, cabelo..." 
+             oninput="filtrarBusca(this.value)" onkeydown="if(event.key==='Enter')filtrarBusca(this.value)">
+      <button class="search-btn" onclick="filtrarBusca(document.getElementById('search-input').value)">
+        🔎 Buscar
+      </button>
+    </div>
+
+    <div class="search-tags">
+      <span class="search-tag" onclick="setSearch('pizza')">🍕 Pizza</span>
+      <span class="search-tag" onclick="setSearch('farmácia')">💊 Farmácia</span>
+      <span class="search-tag" onclick="setSearch('mecânico')">🔧 Mecânico</span>
+      <span class="search-tag" onclick="setSearch('pet')">🐶 Pet Shop</span>
+      <span class="search-tag" onclick="setSearch('cabelo')">💈 Cabelo</span>
+      <span class="search-tag" onclick="setSearch('roupa')">👕 Roupa</span>
+      <span class="search-tag" onclick="setSearch('supermercado')">🛒 Supermercado</span>
+      <span class="search-tag" onclick="setSearch('gás')">🔥 Gás</span>
+    </div>
+  </section>
+
+  <!-- RESULTADOS DA BUSCA -->
+  <div id="search-results">
+    <div class="results-header" id="results-header">Resultados para: <span id="search-term"></span></div>
+    <div class="listings-grid" id="results-grid"></div>
+    <div id="no-results">
+      <h3>🔍</h3>
+      <p>Nenhum comércio encontrado para "<strong id="no-results-term"></strong>"</p>
+      <p style="margin-top:8px; font-size:13px;">Tente outros termos como pizza, farmácia, mecânico...</p>
+    </div>
+  </div>
+
+  <!-- CATEGORIAS -->
+  <section class="categories">
+    <p class="section-title">Categorias</p>
+    <div class="cat-grid">
+      <div class="cat-chip active" onclick="filtrarCategoria('todos', this)">🏪 Todos</div>
+      <div class="cat-chip" onclick="filtrarCategoria('restaurante', this)">🍽️ Restaurantes</div>
+      <div class="cat-chip" onclick="filtrarCategoria('farmácia', this)">💊 Farmácias</div>
+      <div class="cat-chip" onclick="filtrarCategoria('pet', this)">🐾 Pet Shops</div>
+      <div class="cat-chip" onclick="filtrarCategoria('mecânica', this)">🔧 Mecânicas</div>
+      <div class="cat-chip" onclick="filtrarCategoria('roupa', this)">👗 Moda</div>
+      <div class="cat-chip" onclick="filtrarCategoria('supermercado', this)">🛒 Mercados</div>
+      <div class="cat-chip" onclick="filtrarCategoria('barbearia', this)">💈 Barbearias</div>
+      <div class="cat-chip" onclick="filtrarCategoria('salão', this)">💅 Beleza</div>
+      <div class="cat-chip" onclick="filtrarCategoria('padaria', this)">🍞 Padarias</div>
+      <div class="cat-chip" onclick="filtrarCategoria('material', this)">🏗️ Material</div>
+      <div class="cat-chip" onclick="filtrarCategoria('gás', this)">🔥 Gás</div>
+    </div>
+  </section>
+
+  <!-- PROMOÇÕES -->
+  <section class="promos-section" id="promos">
+    <div class="promos-inner">
+      <div class="promos-header">
+        <h2 class="promos-title">🔥 Promoções <span>do Dia</span></h2>
+        <a href="#" class="ver-todas">Ver todas →</a>
+      </div>
+      <div class="promos-grid" id="promos-grid"></div>
+    </div>
+  </section>
+
+  <!-- LISTINGS PRINCIPAIS -->
+  <section class="listings-section">
+    <div class="listings-header">
+      <h2 class="listings-title" id="listings-title">🏪 Todos os Comércios</h2>
+      <select class="sort-select" onchange="ordenar(this.value)">
+        <option value="rating">⭐ Melhor avaliados</option>
+        <option value="nome">🔤 A-Z</option>
+        <option value="visitas">👁️ Mais visitados</option>
+      </select>
+    </div>
+    <div class="listings-grid" id="main-grid"></div>
+  </section>
+
+  <!-- RANKING -->
+  <section class="ranking-section" id="ranking">
+    <div class="ranking-inner">
+      <h2 class="ranking-title">🏆 Ranking dos Comércios</h2>
+      <div class="ranking-tabs">
+        <button class="ranking-tab active" onclick="mostrarRanking('rating', this)">⭐ Mais Bem Avaliados</button>
+        <button class="ranking-tab" onclick="mostrarRanking('visitas', this)">👁️ Mais Visitados</button>
+        <button class="ranking-tab" onclick="mostrarRanking('recomendados', this)">💚 Mais Recomendados</button>
+      </div>
+      <div class="ranking-list" id="ranking-list"></div>
+    </div>
+  </section>
+
+  <!-- MAPA -->
+  <section class="map-section" id="mapa">
+    <h2 class="map-title">🗺️ Mapa do Comércio</h2>
+    <p class="map-sub">Encontre os comércios no mapa da cidade</p>
+    <div class="map-container">
+      <div id="leaflet-map"></div>
+      <div class="map-legend">
+        <div class="map-legend-item"><div class="map-dot" style="background:#00C853"></div> Aberto agora</div>
+        <div class="map-legend-item"><div class="map-dot" style="background:#FF6D00"></div> Promoção ativa</div>
+        <div class="map-legend-item"><div class="map-dot" style="background:#aaa"></div> Fechado</div>
+      </div>
+    </div>
+    <p style="margin-top:14px; font-size:13px; color:#aaa; text-align:center;">
+      💡 Dica: Para adicionar sua loja no mapa, <a href="#" onclick="abrirCadastroLoja()" style="color:var(--verde)">cadastre-se gratuitamente</a>
+    </p>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div>
+          <div class="footer-brand">Comércio<span>BES</span></div>
+          <p class="footer-desc">O guia comercial completo de Boa Esperança do Sul. Conectando moradores ao comércio local desde 2024.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Navegação</h4>
+          <a href="#busca">🔎 Buscar</a>
+          <a href="#promos">🔥 Promoções</a>
+          <a href="#ranking">⭐ Ranking</a>
+          <a href="#mapa">🗺️ Mapa</a>
+        </div>
+        <div class="footer-col">
+          <h4>Comerciante?</h4>
+          <a href="#" onclick="abrirCadastroLoja()">+ Cadastrar loja</a>
+          <a href="#">📢 Anunciar promoção</a>
+          <a href="#">📞 Contato</a>
+          <a href="#">ℹ️ Sobre</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span id="current-year">2024</span> ComércioBES · Boa Esperança do Sul — SP</span>
+        <span>Feito com 💚 para a cidade</span>
+      </div>
+    </div>
+  </footer>
+
+<!-- ===== MODAL PERFIL DA LOJA ===== -->
+<div class="modal-overlay" id="modal-overlay" onclick="fecharModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-img" id="modal-img">
+      <button class="modal-close" onclick="fecharModal()">✕</button>
+      <button class="modal-fav" id="modal-fav" onclick="toggleFavoritoModal()">♡</button>
+      <span id="modal-emoji"></span>
+    </div>
+    <div class="modal-body">
+      <div class="modal-cat" id="modal-cat"></div>
+      <div class="modal-name" id="modal-name"></div>
+      
+      <div class="modal-info" id="modal-info"></div>
+
+      <hr class="modal-divider">
+
+      <div class="modal-stars-big" id="modal-stars-big"></div>
+
+      <div class="foto-galeria" id="modal-fotos"></div>
+
+      <!-- CATÁLOGO / CARRINHO -->
+      <div id="modal-catalogo"></div>
+
+      <hr class="modal-divider">
+
+      <p style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:12px;">Avaliar este comércio</p>
+      <div class="review-stars" id="review-stars">
+        <span class="review-star" data-val="1" onclick="avaliar(1)">★</span>
+        <span class="review-star" data-val="2" onclick="avaliar(2)">★</span>
+        <span class="review-star" data-val="3" onclick="avaliar(3)">★</span>
+        <span class="review-star" data-val="4" onclick="avaliar(4)">★</span>
+        <span class="review-star" data-val="5" onclick="avaliar(5)">★</span>
+      </div>
+      <textarea class="review-input" placeholder="Deixe um comentário (opcional)..."></textarea>
+      <button class="btn-avaliar" onclick="enviarAvaliacao()">Enviar avaliação</button>
+
+      <hr class="modal-divider">
+
+      <div class="modal-actions" id="modal-actions"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FAB CADASTRO -->
+<button class="fab" onclick="abrirCadastroLoja()">
+  ➕ Cadastrar minha loja
+</button>
+
+<!-- FLOATING CART WIDGET -->
+<button class="fab-cart" id="fab-cart" onclick="toggleCarrinhoDrawer()" style="display:none">
+  🛒 <span class="fab-cart-badge" id="fab-cart-badge">0</span>
+</button>
+
+<!-- ===== CART DRAWER ===== -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="fecharCarrinhoDrawer()"></div>
+<div class="cart-drawer" id="cart-drawer">
+  <div class="drawer-header">
+    <h3>🛒 Meu Carrinho</h3>
+    <button class="drawer-close" onclick="fecharCarrinhoDrawer()">✕</button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+  <div class="drawer-footer" id="drawer-footer">
+    <div class="drawer-total" id="drawer-total"></div>
+    <button class="btn-checkout" onclick="abrirCheckout()">🛒 Finalizar Pedido</button>
+    <button class="btn-checkout-whats" onclick="enviarTudoWhatsApp()">💬 Enviar via WhatsApp</button>
+  </div>
+</div>
+
+<!-- ===== AUTH MODAL ===== -->
+<div class="auth-overlay" id="auth-overlay" onclick="fecharAuth(event)">
+  <div class="auth-modal" onclick="event.stopPropagation()">
+    <button class="auth-close" onclick="fecharAuth()">✕</button>
+    <h2 class="auth-title" id="auth-title">👤 Entrar</h2>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="trocarAuthTab('login', this)">Entrar</button>
+      <button class="auth-tab" onclick="trocarAuthTab('cadastro', this)">Criar Conta</button>
+    </div>
+    <form class="auth-form" id="auth-form-login" onsubmit="return fazerLogin(event)">
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="login-email" placeholder="seu@email.com" required>
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" id="login-senha" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="auth-btn">Entrar</button>
+    </form>
+    <form class="auth-form" id="auth-form-cadastro" style="display:none" onsubmit="return fazerCadastro(event)">
+      <div class="auth-tipo-toggle">
+        <button type="button" class="tipo-btn active" id="tipo-cliente-btn" onclick="trocarTipoConta('cliente')">👤 Cliente</button>
+        <button type="button" class="tipo-btn" id="tipo-lojista-btn" onclick="trocarTipoConta('lojista')">🏪 Lojista</button>
+      </div>
+      <div class="form-group">
+        <label>Nome completo</label>
+        <input type="text" id="reg-nome" placeholder="João da Silva" required>
+      </div>
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="reg-email" placeholder="seu@email.com" required>
+      </div>
+      <div class="form-group">
+        <label>Telefone</label>
+        <input type="tel" id="reg-tel" placeholder="(16) 99999-9999">
+      </div>
+      <div class="form-group">
+        <label>Senha (mínimo 6 caracteres)</label>
+        <input type="password" id="reg-senha" placeholder="••••••••" minlength="6" required>
+      </div>
+      <div id="campos-lojista" style="display:none">
+        <hr style="border:none;border-top:1px solid #eee;margin:16px 0;">
+        <p style="font-size:13px;color:#aaa;margin-bottom:12px;">📋 Dados da loja (pode completar depois)</p>
+        <div class="form-group">
+          <label>Nome da loja</label>
+          <input type="text" id="reg-loja-nome" placeholder="Ex: Pizzaria Bella Massa">
+        </div>
+        <div class="form-group">
+          <label>WhatsApp da loja</label>
+          <input type="tel" id="reg-loja-whatsapp" placeholder="5516999999999">
+        </div>
+      </div>
+      <button type="submit" class="auth-btn" id="reg-submit-btn">Criar Conta</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===== MERCHANT REGISTRATION MODAL ===== -->
+<div class="merchant-overlay" id="merchant-overlay" onclick="fecharCadastroLoja(event)">
+  <div class="merchant-modal" onclick="event.stopPropagation()">
+    <button class="merchant-close" onclick="fecharCadastroLoja()">✕</button>
+    <h2>➕ Cadastrar Minha Loja</h2>
+    <p class="merchant-sub">Preencha os dados para aparecer no Comércio BES</p>
+    <form class="merchant-form" id="merchant-form" onsubmit="return salvarCadastroLoja(event)">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nome do estabelecimento *</label>
+          <input type="text" id="loja-nome" placeholder="Ex: Pizzaria Bella Massa" required>
+        </div>
+        <div class="form-group">
+          <label>Categoria *</label>
+          <select id="loja-categoria" required>
+            <option value="">Selecione...</option>
+            <option value="restaurante">🍽️ Restaurante</option>
+            <option value="farmácia">💊 Farmácia</option>
+            <option value="pet">🐾 Pet Shop</option>
+            <option value="mecânica">🔧 Mecânica</option>
+            <option value="barbearia">💈 Barbearia</option>
+            <option value="roupa">👗 Moda</option>
+            <option value="supermercado">🛒 Supermercado</option>
+            <option value="salão">💅 Beleza</option>
+            <option value="padaria">🍞 Padaria</option>
+            <option value="gás">🔥 Gás</option>
+            <option value="material">🏗️ Material</option>
+            <option value="outro">📦 Outro</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Endereço *</label>
+        <input type="text" id="loja-endereco" placeholder="Rua, número" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Telefone *</label>
+          <input type="tel" id="loja-tel" placeholder="(16) 99999-9999" required>
+        </div>
+        <div class="form-group">
+          <label>WhatsApp *</label>
+          <input type="tel" id="loja-whatsapp" placeholder="5516999999999" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Horário de funcionamento</label>
+        <input type="text" id="loja-horario" placeholder="Ex: Seg-Sex · 8h às 18h">
+      </div>
+      <div class="form-group">
+        <label>Emoji representativo</label>
+        <input type="text" id="loja-emoji" placeholder="🍕" maxlength="4">
+      </div>
+      <button type="submit" class="auth-btn">Cadastrar Loja</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===== CHECKOUT MODAL ===== -->
+<div class="checkout-overlay" id="checkout-overlay" onclick="fecharCheckout(event)">
+  <div class="checkout-modal" onclick="event.stopPropagation()">
+    <button class="checkout-close" onclick="fecharCheckout()">✕</button>
+    <h2>🛒 Finalizar Pedido</h2>
+    <div id="checkout-items"></div>
+    <hr class="modal-divider">
+    <form id="checkout-form" onsubmit="return confirmarPedido(event)">
+      <div class="form-group">
+        <label>Nome *</label>
+        <input type="text" id="checkout-nome" placeholder="Seu nome" required>
+      </div>
+      <div class="form-group">
+        <label>Telefone *</label>
+        <input type="tel" id="checkout-tel" placeholder="(16) 99999-9999" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Rua *</label>
+          <input type="text" id="checkout-rua" placeholder="Rua das Flores" required>
+        </div>
+        <div class="form-group" style="max-width:120px">
+          <label>Número *</label>
+          <input type="text" id="checkout-numero" placeholder="123" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Bairro *</label>
+          <input type="text" id="checkout-bairro" placeholder="Centro" required>
+        </div>
+        <div class="form-group">
+          <label>Complemento</label>
+          <input type="text" id="checkout-complemento" placeholder="Apto 2, Bloco B...">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Referência</label>
+        <input type="text" id="checkout-referencia" placeholder="Próximo ao mercado...">
+      </div>
+      <div class="form-group">
+        <label>Forma de pagamento</label>
+        <select id="checkout-pagamento">
+          <option value="pix">PIX</option>
+          <option value="dinheiro">Dinheiro na entrega</option>
+          <option value="cartao">Cartão na entrega</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Observações</label>
+        <textarea id="checkout-obs" placeholder="Troco, informações adicionais..."></textarea>
+      </div>
+      <div class="checkout-total" id="checkout-total"></div>
+      <div class="checkout-actions">
+        <button type="submit" class="btn-confirmar-pedido">✅ Confirmar Pedido</button>
+        <button type="button" class="btn-confirmar-whats" onclick="confirmarPedidoWhatsApp()">💬 Confirmar e Enviar via WhatsApp</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== ORDERS MODAL ===== -->
+<div class="orders-overlay" id="orders-overlay" onclick="fecharPedidos(event)">
+  <div class="orders-modal" onclick="event.stopPropagation()">
+    <button class="orders-close" onclick="fecharPedidos()">✕</button>
+    <h2>📋 Meus Pedidos</h2>
+    <div id="orders-list"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="js/script.js"></script>
+</body>
+</html>
+
