@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Comercio BES
 
 Guia comercial local de **Boa Esperanca do Sul (SP)**, desenvolvido como site estatico para facilitar a descoberta de lojas, servicos e promocoes da cidade.
@@ -74,3 +75,6 @@ Cada item possui campos como:
 - `horario`
 - `fotos`
 - `promo`
+=======
+# Comercio_BES
+>>>>>>> 48623e457ce2ae1dbfb13fcb7f4061ce4878537e
