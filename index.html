@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Comércio BES — Boa Esperança do Sul</title>
+<meta name="description" content="Guia comercial completo de Boa Esperança do Sul. Restaurantes, farmácias, mecânicas e muito mais.">
+<meta name="theme-color" content="#00C853">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ComércioBES">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
+<link rel="apple-touch-icon" href="icons/icon-192.svg">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -22,6 +30,12 @@
         <li><a href="#mapa">🗺️ Mapa</a></li>
       </ul>
       <div class="nav-actions">
+        <button class="nav-icon-btn" onclick="toggleDarkMode()" title="Tema escuro" id="btn-dark-mode">
+          🌙
+        </button>
+        <button class="nav-icon-btn" onclick="abrirFavoritos()" title="Favoritos" id="btn-favs-nav">
+          ❤️
+        </button>
         <button class="nav-icon-btn" onclick="toggleCarrinhoDrawer()" title="Carrinho" id="btn-cart-nav">
           🛒 <span class="nav-badge" id="cart-badge"></span>
         </button>
@@ -40,6 +54,8 @@
     <a href="#promos" onclick="fecharMobileMenu()">🔥 Promoções</a>
     <a href="#ranking" onclick="fecharMobileMenu()">⭐ Ranking</a>
     <a href="#mapa" onclick="fecharMobileMenu()">🗺️ Mapa</a>
+    <a href="#" onclick="fecharMobileMenu(); abrirFavoritos()">❤️ Favoritos</a>
+    <a href="#" onclick="fecharMobileMenu(); toggleDarkMode()">🌙 Tema escuro</a>
     <a href="#" onclick="fecharMobileMenu(); abrirCadastroLoja()">➕ Cadastrar loja</a>
   </div>
 
@@ -113,6 +129,22 @@
     </div>
   </section>
 
+  <!-- FAVORITOS -->
+  <section class="favoritos-section" id="favoritos" style="display:none;">
+    <div class="favoritos-inner">
+      <div class="favoritos-header">
+        <h2 class="favoritos-title">❤️ Meus <span>Favoritos</span></h2>
+        <span class="favoritos-count" id="favoritos-count">0 lojas</span>
+      </div>
+      <div class="listings-grid" id="favoritos-grid"></div>
+      <div class="favoritos-empty" id="favoritos-empty" style="display:none;">
+        <p style="font-size:48px;margin-bottom:16px;">💔</p>
+        <p>Você ainda não tem favoritos</p>
+        <p style="font-size:13px;color:#aaa;margin-top:8px;">Clique no ♡ nos cards para adicionar!</p>
+      </div>
+    </div>
+  </section>
+
   <!-- LISTINGS PRINCIPAIS -->
   <section class="listings-section">
     <div class="listings-header">
@@ -124,6 +156,7 @@
       </select>
     </div>
     <div class="listings-grid" id="main-grid"></div>
+    <div class="pagination" id="pagination"></div>
   </section>
 
   <!-- RANKING -->
@@ -443,7 +476,28 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- PWA INSTALL BANNER -->
+<div class="pwa-install-banner" id="pwa-install-banner" style="display:none;">
+  <div class="pwa-install-inner">
+    <span>📲 Instale o <strong>ComércioBES</strong> no seu celular!</span>
+    <div class="pwa-install-actions">
+      <button class="pwa-install-btn" onclick="instalarPWA()">Instalar</button>
+      <button class="pwa-dismiss-btn" onclick="fecharBannerPWA()">✕</button>
+    </div>
+  </div>
+</div>
+
 <script src="js/script.js"></script>
+<script>
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('SW registrado:', reg.scope))
+      .catch(err => console.error('SW falha:', err));
+  });
+}
+</script>
 </body>
 </html>
 

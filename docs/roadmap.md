@@ -28,13 +28,13 @@ Plano de evolução do projeto de vitrine/marketplace local.
 
 ## Fase 2 — PWA + UX Avançado
 
-> Status: Planejado
+> Status: **Em andamento**
 
-- [ ] **PWA (Progressive Web App)**
+- [x] **PWA (Progressive Web App)**
   - Manifest.json + Service Worker
   - Funcionar offline (cache dos dados)
   - "Instalar" como app no celular
-- [ ] **Melhorias de UX**
+- [x] **Melhorias de UX**
   - Skeleton loading enquanto carrega dados
   - Lazy loading das imagens reais
   - Animações de transição entre seções
@@ -45,36 +45,43 @@ Plano de evolução do projeto de vitrine/marketplace local.
 - [ ] **Geolocalização**
   - "Comércios perto de você" usando Geolocation API
   - Ordenar por proximidade
-- [ ] **Favoritos (localStorage)**
+- [x] **Favoritos (localStorage)**
   - Salvar lojas favoritas no navegador
   - Seção "Meus Favoritos"
-- [ ] **Tema escuro (Dark Mode)**
+- [x] **Tema escuro (Dark Mode)**
 - [ ] **Internacionalização básica** (pt-BR / en)
 
 ---
 
-## Fase 3 — Backend + Painel Admin
+## Fase 3 — Backend + Painel Admin ✅
 
-> Status: Planejado
+> Status: **Concluído**
 
-- [ ] **API REST com Node.js**
-  - Express ou Fastify
-  - CRUD completo de comércios
-  - Endpoints: `/api/comercios`, `/api/comercios/:slug`, `/api/categorias`
-- [ ] **Banco de dados**
-  - PostgreSQL (Supabase) ou MongoDB (Atlas)
-  - Schema de comércios, produtos, categorias, avaliações
-- [ ] **Painel administrativo**
-  - Login para comerciantes (JWT + bcrypt)
-  - Cadastrar/editar/excluir própria loja
-  - Gerenciar catálogo de produtos
-  - Ver estatísticas (visitas, cliques no WhatsApp)
-- [ ] **Upload de imagens**
-  - Cloudinary ou Supabase Storage
-  - Compressão e redimensionamento automático
-- [ ] **Avaliações reais**
-  - Salvar avaliações no banco
-  - Média calculada no servidor
+- [x] **API REST com Node.js**
+  - Express.js com middleware (CORS, Helmet, rate-limiting)
+  - CRUD completo de comércios, produtos, promoções
+  - Endpoints: `/api/comercios`, `/api/comercios/:slug`, `/api/categorias`, `/api/avaliacoes`, `/api/estatisticas`
+- [x] **Banco de dados**
+  - Prisma ORM com SQLite (dev) / PostgreSQL ou MySQL (prod)
+  - Schema: User, Categoria, Comercio, Produto, Promocao, Avaliacao, Estatistica
+  - Seed script importa todos os dados de `data.json`
+- [x] **Painel administrativo**
+  - Login para administradores e comerciantes (JWT + bcrypt)
+  - Cadastrar/editar/excluir lojas
+  - Gerenciar catálogo de produtos e promoções
+  - Ver avaliações e estatísticas (visitas, cliques WhatsApp)
+  - Dashboard com visão geral
+- [x] **Upload de imagens**
+  - Multer para armazenamento local
+  - Integração opcional com Cloudinary (auto-detecta via env vars)
+- [x] **Avaliações reais**
+  - Salvar avaliações no banco (nota + comentário)
+  - Média calculada no servidor, atualizada em tempo real
+- [x] **Frontend integrado com API**
+  - `carregarDados()` busca da API com fallback para `data.json`
+  - `enviarAvaliacao()` envia via API REST
+  - Estatísticas: visitas, cliques WhatsApp, compartilhamentos
+  - Auth (login/registro) via API com fallback localStorage
 
 ---
 

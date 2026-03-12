@@ -1,0 +1,140 @@
+// ===========================================
+// Prisma Schema - Comercio BES
+// ===========================================
+// Para trocar de SQLite para PostgreSQL:
+// 1. Mude provider para "postgresql"
+// 2. Atualize DATABASE_URL no .env
+// 3. Rode: npx prisma db push
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// --- Usuarios (comerciantes, clientes, admin) ---
+model User {
+  id        Int      @id @default(autoincrement())
+  nome      String
+  email     String   @unique
+  senha     String
+  tipo      String   @default("cliente") // cliente | comerciante | admin
+  telefone  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  comercios  Comercio[]
+  avaliacoes Avaliacao[]
+
+  @@map("users")
+}
+
+// --- Categorias ---
+model Categoria {
+  id    Int    @id @default(autoincrement())
+  nome  String @unique
+  slug  String @unique
+  emoji String @default("")
+
+  comercios Comercio[]
+
+  @@map("categorias")
+}
+
+// --- Comercios (lojas) ---
+model Comercio {
+  id           Int      @id @default(autoincrement())
+  slug         String   @unique
+  nome         String
+  categoriaId  Int
+  tags         String   @default("[]") // JSON array como string
+  emoji        String   @default("")
+  descricao    String?
+  aberto       Boolean  @default(true)
+  endereco     String
+  lat          Float
+  lng          Float
+  tel          String?
+  whatsapp     String
+  horario      String
+  fotos        String   @default("[]") // JSON array como string
+  visitas      Int      @default(0)
+  recomendados Int      @default(0)
+  ownerId      Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  categoria    Categoria     @relation(fields: [categoriaId], references: [id])
+  owner        User?         @relation(fields: [ownerId], references: [id])
+  produtos     Produto[]
+  promocao     Promocao?
+  avaliacoes   Avaliacao[]
+  estatisticas Estatistica[]
+
+  @@map("comercios")
+}
+
+// --- Produtos (catalogo) ---
+model Produto {
+  id          Int    @id @default(autoincrement())
+  comercioId  Int
+  nome        String
+  descricao   String @default("")
+  preco       Float
+  imagem      String?
+  disponivel  Boolean @default(true)
+  ordem       Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  comercio Comercio @relation(fields: [comercioId], references: [id], onDelete: Cascade)
+
+  @@map("produtos")
+}
+
+// --- Promocoes ---
+model Promocao {
+  id         Int     @id @default(autoincrement())
+  comercioId Int     @unique
+  ativo      Boolean @default(true)
+  descricao  String
+  preco      String
+  original   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  comercio Comercio @relation(fields: [comercioId], references: [id], onDelete: Cascade)
+
+  @@map("promocoes")
+}
+
+// --- Avaliacoes ---
+model Avaliacao {
+  id         Int      @id @default(autoincrement())
+  comercioId Int
+  userId     Int?
+  nota       Int      // 1 a 5
+  comentario String?
+  createdAt  DateTime @default(now())
+
+  comercio Comercio @relation(fields: [comercioId], references: [id], onDelete: Cascade)
+  user     User?    @relation(fields: [userId], references: [id])
+
+  @@map("avaliacoes")
+}
+
+// --- Estatisticas (visitas, cliques) ---
+model Estatistica {
+  id         Int      @id @default(autoincrement())
+  comercioId Int
+  tipo       String   // visita | whatsapp_click | telefone_click | compartilhamento
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  comercio Comercio @relation(fields: [comercioId], references: [id], onDelete: Cascade)
+
+  @@map("estatisticas")
+}

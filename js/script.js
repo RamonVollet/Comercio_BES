@@ -1,5 +1,22 @@
 // ===== COMÉRCIO BES — SCRIPT PRINCIPAL =====
-// Arquitetura localStorage-first, pronta para migração Supabase
+// Arquitetura híbrida: API REST (backend) com fallback localStorage
+
+// ===== CONFIG =====
+const API_BASE = window.location.port === '3000'
+  ? window.location.origin + '/api'
+  : 'http://localhost:3000/api'; // Backend local
+
+let API_DISPONIVEL = false; // detectado automaticamente
+
+// ===== API HELPER =====
+function registrarEstatistica(comercioId, tipo) {
+  if (!API_DISPONIVEL || !comercioId) return;
+  fetch(API_BASE + '/estatisticas/registrar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ comercioId, tipo })
+  }).catch(err => console.warn('[Stats] Falha ao registrar ' + tipo + ':', err.message));
+}
 
 // ===== STORAGE KEYS =====
 const KEYS = {
@@ -8,7 +25,8 @@ const KEYS = {
   CART: 'bes_carrinho',
   ORDERS: 'bes_pedidos',
   FAVORITES: 'bes_favoritos',
-  MERCHANTS: 'bes_lojistas'
+  MERCHANTS: 'bes_lojistas',
+  API_TOKEN: 'bes_api_token'
 };
 
 // ===== STATE =====
@@ -18,6 +36,9 @@ let comercioAtual = null;
 let avaliacao = 0;
 let carrinhoModal = {}; // carrinho temporário do modal (qtds por idx)
 let mapa = null;
+let paginaAtual = 1;
+const ITEMS_POR_PAGINA = 8;
+let deferredPrompt = null;
 
 // ===== STORAGE HELPERS =====
 function storageGet(key) {
@@ -33,24 +54,59 @@ const Auth = {
 
   getSession() { return storageGet(KEYS.SESSION); },
 
+  getToken() { return storageGet(KEYS.API_TOKEN); },
+
   isLoggedIn() { return !!this.getSession(); },
 
   getUser() {
     const session = this.getSession();
     if (!session) return null;
+    // Se logado via API, a session já tem os dados do user
+    if (session.fromApi) return session;
     return this.getUsers().find(u => u.id === session.userId) || null;
   },
 
-  register(nome, email, tel, senha, tipo, dadosLoja) {
+  async register(nome, email, tel, senha, tipo, dadosLoja) {
+    // Tentar via API primeiro
+    if (API_DISPONIVEL) {
+      try {
+        const body = { nome, email, senha, telefone: tel || undefined };
+        // Mapear tipo: 'lojista' -> 'comerciante', 'usuario' -> 'cliente'
+        body.tipo = tipo === 'lojista' ? 'comerciante' : 'cliente';
+
+        const res = await fetch(API_BASE + '/auth/registro', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) return { ok: false, msg: data.error || 'Erro ao criar conta.' };
+
+        // Salvar token e sessão
+        storageSet(KEYS.API_TOKEN, data.token);
+        storageSet(KEYS.SESSION, {
+          userId: data.user.id,
+          nome: data.user.nome,
+          email: data.user.email,
+          tipo: data.user.tipo,
+          fromApi: true
+        });
+        return { ok: true, user: data.user };
+      } catch (err) {
+        console.warn('[Auth] API register falhou, usando localStorage:', err.message);
+      }
+    }
+
+    // Fallback localStorage
     const users = this.getUsers();
     if (users.some(u => u.email === email)) {
       return { ok: false, msg: 'E-mail já cadastrado.' };
     }
     const user = {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      nome, email, tel, senha, // Em produção: hash da senha via Supabase Auth
+      nome, email, tel, senha,
       criadoEm: new Date().toISOString(),
-      tipo: tipo || 'usuario' // 'usuario' ou 'lojista'
+      tipo: tipo || 'usuario'
     };
     if (tipo === 'lojista' && dadosLoja) {
       user.lojaNome = dadosLoja.nome || '';
@@ -62,7 +118,34 @@ const Auth = {
     return { ok: true, user };
   },
 
-  login(email, senha) {
+  async login(email, senha) {
+    // Tentar via API primeiro
+    if (API_DISPONIVEL) {
+      try {
+        const res = await fetch(API_BASE + '/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, senha })
+        });
+        const data = await res.json();
+        if (!res.ok) return { ok: false, msg: data.error || 'E-mail ou senha incorretos.' };
+
+        // Salvar token e sessão
+        storageSet(KEYS.API_TOKEN, data.token);
+        storageSet(KEYS.SESSION, {
+          userId: data.user.id,
+          nome: data.user.nome,
+          email: data.user.email,
+          tipo: data.user.tipo,
+          fromApi: true
+        });
+        return { ok: true, user: data.user };
+      } catch (err) {
+        console.warn('[Auth] API login falhou, usando localStorage:', err.message);
+      }
+    }
+
+    // Fallback localStorage
     const users = this.getUsers();
     const user = users.find(u => u.email === email && u.senha === senha);
     if (!user) return { ok: false, msg: 'E-mail ou senha incorretos.' };
@@ -72,6 +155,7 @@ const Auth = {
 
   logout() {
     localStorage.removeItem(KEYS.SESSION);
+    localStorage.removeItem(KEYS.API_TOKEN);
   }
 };
 
@@ -216,32 +300,52 @@ const Merchants = {
 // ===== INICIALIZAÇÃO =====
 
 async function carregarDados() {
-  try {
-    const response = await fetch('data/data.json');
-    if (!response.ok) throw new Error('HTTP ' + response.status);
-    const data = await response.json();
-    comercios = data.comercios;
+  // Show skeleton loading
+  mostrarSkeleton();
 
-    // Merge com lojas cadastradas localmente
-    const locais = Merchants.get();
-    locais.forEach(l => {
-      if (!comercios.find(c => c.id === l.id)) {
-        comercios.push(l);
-      }
-    });
-  } catch (err) {
-    console.error('Erro ao carregar dados:', err);
-    mostrarToast('⚠️ Erro ao carregar comércios. Tente recarregar a página.');
+  // Tentar API REST primeiro, fallback para data.json
+  try {
+    const apiRes = await fetch(API_BASE + '/comercios?limit=100');
+    if (!apiRes.ok) throw new Error('API HTTP ' + apiRes.status);
+    const apiData = await apiRes.json();
+    comercios = apiData.comercios || [];
+    API_DISPONIVEL = true;
+    console.log('[ComércioBES] API conectada — ' + comercios.length + ' comércios carregados');
+  } catch (apiErr) {
+    console.warn('[ComércioBES] API indisponível, usando data.json:', apiErr.message);
+    API_DISPONIVEL = false;
+    try {
+      const response = await fetch('data/data.json');
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const data = await response.json();
+      comercios = data.comercios;
+    } catch (err) {
+      console.error('Erro ao carregar dados:', err);
+      mostrarToast('⚠️ Erro ao carregar comércios. Tente recarregar a página.');
+      return;
+    }
   }
+
+  // Merge com lojas cadastradas localmente (fallback local)
+  const locais = Merchants.get();
+  locais.forEach(l => {
+    if (!comercios.find(c => c.id === l.id)) {
+      comercios.push(l);
+    }
+  });
 }
 
 async function inicializar() {
+  aplicarTema();
   await carregarDados();
   atualizarAnoRodape();
   Cart.updateBadge();
   atualizarNavUser();
   verificarDeepLink();
   renderTudo();
+  renderFavoritos();
+  configurarPWAInstall();
+  observarLazyImages();
 }
 
 // ===== DEEP LINKING =====
@@ -267,6 +371,9 @@ function gerarSlug(nome) {
 
 function copiarLinkLoja(slug) {
   const url = window.location.origin + window.location.pathname + '?loja=' + slug;
+  // Registrar compartilhamento
+  const c = comercios.find(x => x.slug === slug);
+  if (c) registrarEstatistica(c.id, 'compartilhamento');
   navigator.clipboard.writeText(url).then(() => {
     mostrarToast('🔗 Link copiado! Compartilhe com quem quiser.');
   }).catch(() => {
@@ -277,6 +384,7 @@ function copiarLinkLoja(slug) {
 // ===== RENDER =====
 
 function renderTudo() {
+  paginaAtual = 1;
   renderizarCards(comercios);
   renderPromos();
   renderRanking('rating');
@@ -332,7 +440,7 @@ function renderMapa() {
       promoLine +
       '<div style="display:flex;gap:6px;margin-top:10px;">' +
         '<button onclick="abrirModal(' + c.id + ')" style="flex:1;background:#0A0A0A;color:#fff;border:none;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Ver perfil</button>' +
-        '<a href="https://wa.me/' + encodeURIComponent(c.whatsapp) + '" target="_blank" rel="noopener noreferrer" style="flex:1;background:#25D366;color:#fff;border:none;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;text-align:center;">💬 WhatsApp</a>' +
+        '<a href="https://wa.me/' + encodeURIComponent(c.whatsapp) + '" target="_blank" rel="noopener noreferrer" onclick="registrarEstatistica(' + c.id + ', \'whatsapp_click\')" style="flex:1;background:#25D366;color:#fff;border:none;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;text-align:center;">💬 WhatsApp</a>' +
       '</div></div>';
 
     L.marker([c.lat, c.lng], { icon }).addTo(mapa).bindPopup(popup);
@@ -364,7 +472,7 @@ function criarCard(c) {
         '<span class="store-reviews">(' + c.visitas + ' visitas)</span>' +
       '</div>' +
       '<div class="store-actions">' +
-        '<a class="btn-whats" href="https://wa.me/' + encodeURIComponent(c.whatsapp) + '?text=' + encodeURIComponent('Olá! Encontrei seu comércio no Comércio BES. Gostaria de mais informações!') + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">💬 WhatsApp</a>' +
+        '<a class="btn-whats" href="https://wa.me/' + encodeURIComponent(c.whatsapp) + '?text=' + encodeURIComponent('Olá! Encontrei seu comércio no Comércio BES. Gostaria de mais informações!') + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); registrarEstatistica(' + c.id + ', \'whatsapp_click\')">💬 WhatsApp</a>' +
         (temCatalogo ? '<button class="btn-catalogo" onclick="event.stopPropagation(); abrirModal(' + c.id + ')">📋 Cardápio</button>' : '') +
         '<button class="btn-perfil" onclick="event.stopPropagation(); abrirModal(' + c.id + ')">👁️</button>' +
       '</div>' +
@@ -381,7 +489,38 @@ function gerarStars(r) {
 }
 
 function renderizarCards(lista) {
-  document.getElementById('main-grid').innerHTML = lista.map(criarCard).join('');
+  const totalPaginas = Math.ceil(lista.length / ITEMS_POR_PAGINA);
+  if (paginaAtual > totalPaginas) paginaAtual = totalPaginas || 1;
+  const inicio = (paginaAtual - 1) * ITEMS_POR_PAGINA;
+  const paginados = lista.slice(inicio, inicio + ITEMS_POR_PAGINA);
+  const grid = document.getElementById('main-grid');
+  grid.innerHTML = paginados.map(criarCard).join('');
+  grid.classList.add('fade-in');
+  setTimeout(() => grid.classList.remove('fade-in'), 400);
+  renderPaginacao(lista.length, totalPaginas);
+  observarLazyImages();
+}
+
+function renderPaginacao(totalItems, totalPaginas) {
+  const container = document.getElementById('pagination');
+  if (!container || totalPaginas <= 1) {
+    if (container) container.innerHTML = '';
+    return;
+  }
+  let html = '';
+  html += '<button class="page-btn" ' + (paginaAtual <= 1 ? 'disabled' : '') + ' onclick="irPagina(' + (paginaAtual - 1) + ')">← Anterior</button>';
+  for (let i = 1; i <= totalPaginas; i++) {
+    html += '<button class="page-num ' + (i === paginaAtual ? 'active' : '') + '" onclick="irPagina(' + i + ')">' + i + '</button>';
+  }
+  html += '<button class="page-btn" ' + (paginaAtual >= totalPaginas ? 'disabled' : '') + ' onclick="irPagina(' + (paginaAtual + 1) + ')">Próxima →</button>';
+  container.innerHTML = html;
+}
+
+function irPagina(n) {
+  paginaAtual = n;
+  const lista = filtrarPorCategoria(categoriaAtiva);
+  renderizarCards(lista);
+  document.querySelector('.listings-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function filtrarPorCategoria(cat) {
@@ -470,6 +609,7 @@ function filtrarCategoria(cat, el) {
   document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   categoriaAtiva = cat;
+  paginaAtual = 1;
   renderizarCards(filtrarPorCategoria(cat));
   const titulo = cat === 'todos' ? '🏪 Todos os Comércios'
     : 'Categoria: ' + cat.charAt(0).toUpperCase() + cat.slice(1);
@@ -484,6 +624,7 @@ function ordenar(tipo) {
   if (tipo === 'rating') lista.sort((a, b) => b.rating - a.rating);
   if (tipo === 'nome') lista.sort((a, b) => a.nome.localeCompare(b.nome));
   if (tipo === 'visitas') lista.sort((a, b) => b.visitas - a.visitas);
+  paginaAtual = 1;
   renderizarCards(lista);
 }
 
@@ -502,6 +643,9 @@ function abrirModal(id) {
   avaliacao = 0;
   carrinhoModal = {};
   resetStars();
+
+  // Registrar visita na API
+  registrarEstatistica(c.id, 'visita');
 
   document.getElementById('modal-emoji').textContent = c.emoji;
   document.getElementById('modal-cat').textContent = c.categoria.toUpperCase();
@@ -568,7 +712,7 @@ function abrirModal(id) {
 
   // Ações
   document.getElementById('modal-actions').innerHTML =
-    '<a class="btn-whats-big" href="https://wa.me/' + encodeURIComponent(c.whatsapp) + '?text=' + encodeURIComponent('Olá! Encontrei seu comércio no Comércio BES. Gostaria de mais informações!') + '" target="_blank" rel="noopener noreferrer">💬 Falar no WhatsApp</a>' +
+    '<a class="btn-whats-big" href="https://wa.me/' + encodeURIComponent(c.whatsapp) + '?text=' + encodeURIComponent('Olá! Encontrei seu comércio no Comércio BES. Gostaria de mais informações!') + '" target="_blank" rel="noopener noreferrer" onclick="registrarEstatistica(' + c.id + ', \'whatsapp_click\')">💬 Falar no WhatsApp</a>' +
     '<a class="btn-maps" href="https://www.openstreetmap.org/?mlat=' + c.lat + '&mlon=' + c.lng + '&zoom=17" target="_blank" rel="noopener noreferrer">🗺️ Ver no Mapa</a>' +
     '<button class="btn-compartilhar" onclick="copiarLinkLoja(\'' + c.slug + '\')">🔗 Compartilhar Loja</button>';
 
@@ -708,6 +852,7 @@ function toggleFavoritoModal() {
   }
   mostrarToast(added ? '❤️ Adicionado aos favoritos!' : '💔 Removido dos favoritos.');
   renderizarCards(filtrarPorCategoria(categoriaAtiva));
+  renderFavoritos();
 }
 
 function toggleFavoritoCard(lojaId, btn) {
@@ -715,6 +860,7 @@ function toggleFavoritoCard(lojaId, btn) {
   btn.textContent = added ? '♥' : '♡';
   btn.classList.toggle('active', added);
   mostrarToast(added ? '❤️ Adicionado aos favoritos!' : '💔 Removido dos favoritos.');
+  renderFavoritos();
 }
 
 // ===== CART DRAWER =====
@@ -963,14 +1109,14 @@ function trocarAuthTab(tab, btn) {
   document.getElementById('auth-title').textContent = tab === 'login' ? '👤 Entrar' : '✨ Criar Conta';
 }
 
-function fazerLogin(e) {
+async function fazerLogin(e) {
   if (e) e.preventDefault();
   const email = document.getElementById('login-email').value.trim();
   const senha = document.getElementById('login-senha').value;
 
   if (!email || !senha) { mostrarToast('⚠️ Preencha e-mail e senha.'); return false; }
 
-  const result = Auth.login(email, senha);
+  const result = await Auth.login(email, senha);
   if (!result.ok) {
     mostrarToast('❌ ' + result.msg);
     return false;
@@ -994,7 +1140,7 @@ function trocarTipoConta(tipo) {
   document.getElementById('reg-submit-btn').textContent = tipo === 'lojista' ? 'Criar Conta Lojista' : 'Criar Conta';
 }
 
-function fazerCadastro(e) {
+async function fazerCadastro(e) {
   if (e) e.preventDefault();
   const nome = document.getElementById('reg-nome').value.trim();
   const email = document.getElementById('reg-email').value.trim();
@@ -1012,7 +1158,7 @@ function fazerCadastro(e) {
     };
   }
 
-  const result = Auth.register(nome, email, tel, senha, tipoContaRegistro, dadosLoja);
+  const result = await Auth.register(nome, email, tel, senha, tipoContaRegistro, dadosLoja);
   if (!result.ok) {
     mostrarToast('❌ ' + result.msg);
     return false;
@@ -1195,20 +1341,32 @@ function fecharPedidos(e) {
 
 function abrirFavoritos() {
   fecharUserMenu();
+  const section = document.getElementById('favoritos');
+  if (!section) return;
+  renderFavoritos();
+  section.style.display = 'block';
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderFavoritos() {
+  const section = document.getElementById('favoritos');
+  if (!section) return;
   const favIds = Favorites.get();
   const favComercios = comercios.filter(c => favIds.includes(c.id));
+  const grid = document.getElementById('favoritos-grid');
+  const empty = document.getElementById('favoritos-empty');
+  const count = document.getElementById('favoritos-count');
 
   if (favComercios.length === 0) {
-    mostrarToast('❤️ Você ainda não tem favoritos. Clique no ♡ para favoritar!');
-    return;
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    section.style.display = favIds.length > 0 || section.style.display === 'block' ? 'block' : 'none';
+  } else {
+    empty.style.display = 'none';
+    grid.innerHTML = favComercios.map(criarCard).join('');
+    section.style.display = 'block';
   }
-
-  renderizarCards(favComercios);
-  document.getElementById('listings-title').textContent = '❤️ Meus Favoritos (' + favComercios.length + ')';
-  document.querySelector('.listings-section').scrollIntoView({ behavior: 'smooth' });
-
-  // Reset category chips
-  document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+  if (count) count.textContent = favComercios.length + (favComercios.length === 1 ? ' loja' : ' lojas');
 }
 
 // ===== AVALIAÇÃO =====
@@ -1224,12 +1382,50 @@ function resetStars() {
   document.querySelectorAll('.review-star').forEach(s => s.classList.remove('active'));
 }
 
-function enviarAvaliacao() {
+async function enviarAvaliacao() {
   if (avaliacao === 0) {
     mostrarToast('⭐ Selecione uma nota antes de enviar!');
     return;
   }
-  mostrarToast('✅ Avaliação de ' + avaliacao + '★ enviada para ' + comercioAtual.nome + '!');
+
+  const comentario = document.querySelector('.review-input').value.trim();
+
+  if (API_DISPONIVEL && comercioAtual.slug) {
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const token = storageGet(KEYS.API_TOKEN);
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+
+      const res = await fetch(API_BASE + '/avaliacoes/' + comercioAtual.slug, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ nota: avaliacao, comentario: comentario || undefined })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao enviar');
+
+      // Atualizar rating local com a media retornada pela API
+      comercioAtual.rating = data.mediaAtual;
+      comercioAtual.totalAvaliacoes = data.totalAvaliacoes;
+
+      // Atualizar exibição das estrelas no modal
+      document.getElementById('modal-stars-big').innerHTML =
+        gerarStars(data.mediaAtual) +
+        '<span class="modal-rating-big">' + data.mediaAtual + '</span>' +
+        '<span style="font-size:14px;color:#aaa;margin-left:8px;">(' + data.totalAvaliacoes + ' avaliações)</span>';
+
+      mostrarToast('✅ Avaliação de ' + avaliacao + '★ enviada para ' + comercioAtual.nome + '!');
+    } catch (err) {
+      console.error('Erro ao enviar avaliação:', err);
+      mostrarToast('❌ Erro ao enviar avaliação: ' + err.message);
+      return;
+    }
+  } else {
+    // Fallback localStorage (sem API)
+    mostrarToast('✅ Avaliação de ' + avaliacao + '★ enviada para ' + comercioAtual.nome + '!');
+  }
+
   resetStars();
   avaliacao = 0;
   document.querySelector('.review-input').value = '';
@@ -1249,6 +1445,134 @@ function mostrarToast(msg) {
 function atualizarAnoRodape() {
   const el = document.getElementById('current-year');
   if (el) el.textContent = String(new Date().getFullYear());
+}
+
+// ===== SKELETON LOADING =====
+
+function mostrarSkeleton() {
+  const grid = document.getElementById('main-grid');
+  if (!grid) return;
+  let skeletonHTML = '';
+  for (let i = 0; i < 4; i++) {
+    skeletonHTML += '<div class="store-card skeleton-card">' +
+      '<div class="skeleton-img skeleton-pulse"></div>' +
+      '<div class="store-body">' +
+        '<div class="skeleton-line skeleton-pulse" style="width:40%;height:12px;margin-bottom:10px;"></div>' +
+        '<div class="skeleton-line skeleton-pulse" style="width:80%;height:18px;margin-bottom:12px;"></div>' +
+        '<div class="skeleton-line skeleton-pulse" style="width:60%;height:14px;margin-bottom:16px;"></div>' +
+        '<div class="skeleton-line skeleton-pulse" style="width:50%;height:14px;margin-bottom:16px;"></div>' +
+        '<div style="display:flex;gap:8px;">' +
+          '<div class="skeleton-line skeleton-pulse" style="flex:1;height:40px;border-radius:12px;"></div>' +
+          '<div class="skeleton-line skeleton-pulse" style="width:48px;height:40px;border-radius:12px;"></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+  grid.innerHTML = skeletonHTML;
+
+  // Also skeleton for promos
+  const promosGrid = document.getElementById('promos-grid');
+  if (promosGrid) {
+    let promoSkeleton = '';
+    for (let i = 0; i < 3; i++) {
+      promoSkeleton += '<div class="promo-card skeleton-card">' +
+        '<div class="skeleton-line skeleton-pulse-dark" style="width:100px;height:20px;border-radius:100px;margin-bottom:14px;"></div>' +
+        '<div class="skeleton-line skeleton-pulse-dark" style="width:70%;height:18px;margin-bottom:8px;"></div>' +
+        '<div class="skeleton-line skeleton-pulse-dark" style="width:90%;height:14px;margin-bottom:16px;"></div>' +
+        '<div class="skeleton-line skeleton-pulse-dark" style="width:40%;height:24px;"></div>' +
+      '</div>';
+    }
+    promosGrid.innerHTML = promoSkeleton;
+  }
+}
+
+// ===== DARK MODE =====
+
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle('dark-mode');
+  localStorage.setItem('bes_dark_mode', isDark ? '1' : '0');
+  const btn = document.getElementById('btn-dark-mode');
+  if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+  // Update theme-color meta
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = isDark ? '#0A0A0A' : '#00C853';
+}
+
+function aplicarTema() {
+  const dark = localStorage.getItem('bes_dark_mode') === '1';
+  if (dark) {
+    document.body.classList.add('dark-mode');
+    const btn = document.getElementById('btn-dark-mode');
+    if (btn) btn.textContent = '☀️';
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = '#0A0A0A';
+  }
+}
+
+// ===== PWA INSTALL =====
+
+function configurarPWAInstall() {
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const banner = document.getElementById('pwa-install-banner');
+    if (banner && !localStorage.getItem('bes_pwa_dismissed')) {
+      banner.style.display = 'block';
+    }
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    fecharBannerPWA();
+    mostrarToast('✅ App instalado com sucesso!');
+  });
+}
+
+function instalarPWA() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(choice => {
+    if (choice.outcome === 'accepted') {
+      mostrarToast('✅ Instalando o ComércioBES...');
+    }
+    deferredPrompt = null;
+    fecharBannerPWA();
+  });
+}
+
+function fecharBannerPWA() {
+  const banner = document.getElementById('pwa-install-banner');
+  if (banner) banner.style.display = 'none';
+  localStorage.setItem('bes_pwa_dismissed', '1');
+}
+
+// ===== LAZY LOADING IMAGES =====
+
+function observarLazyImages() {
+  const images = document.querySelectorAll('img[data-src]');
+  if (!images.length) return;
+
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries, obs) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          img.src = img.dataset.src;
+          img.removeAttribute('data-src');
+          img.classList.add('lazy-loaded');
+          obs.unobserve(img);
+        }
+      });
+    }, { rootMargin: '200px' });
+
+    images.forEach(img => observer.observe(img));
+  } else {
+    // Fallback
+    images.forEach(img => {
+      img.src = img.dataset.src;
+      img.removeAttribute('data-src');
+    });
+  }
 }
 
 // ===== BOOT =====

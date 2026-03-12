@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Admin - Comercio BES</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <!-- Login -->
+  <div id="login-page" class="page active">
+    <div class="login-container">
+      <div class="login-header">
+        <h1>Comercio<span>BES</span></h1>
+        <p>Painel do Comerciante</p>
+      </div>
+      <form id="login-form">
+        <div class="form-group">
+          <label for="login-email">Email</label>
+          <input type="email" id="login-email" placeholder="seu@email.com" required>
+        </div>
+        <div class="form-group">
+          <label for="login-senha">Senha</label>
+          <input type="password" id="login-senha" placeholder="Sua senha" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Entrar</button>
+        <p class="login-link">Nao tem conta? <a href="#" id="show-registro">Cadastre-se</a></p>
+      </form>
+
+      <form id="registro-form" style="display:none">
+        <div class="form-group">
+          <label for="reg-nome">Nome</label>
+          <input type="text" id="reg-nome" placeholder="Seu nome" required>
+        </div>
+        <div class="form-group">
+          <label for="reg-email">Email</label>
+          <input type="email" id="reg-email" placeholder="seu@email.com" required>
+        </div>
+        <div class="form-group">
+          <label for="reg-telefone">Telefone</label>
+          <input type="tel" id="reg-telefone" placeholder="16999999999">
+        </div>
+        <div class="form-group">
+          <label for="reg-senha">Senha</label>
+          <input type="password" id="reg-senha" placeholder="Minimo 6 caracteres" required minlength="6">
+        </div>
+        <input type="hidden" id="reg-tipo" value="comerciante">
+        <button type="submit" class="btn btn-primary btn-full">Criar Conta</button>
+        <p class="login-link">Ja tem conta? <a href="#" id="show-login">Fazer login</a></p>
+      </form>
+
+      <div id="login-error" class="alert alert-error" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard-page" class="page">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>Comercio<span>BES</span></h2>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-section="overview">
+          <span class="nav-icon">&#x1F4CA;</span> Visao Geral
+        </a>
+        <a href="#" class="nav-item" data-section="lojas">
+          <span class="nav-icon">&#x1F3EA;</span> Minhas Lojas
+        </a>
+        <a href="#" class="nav-item" data-section="produtos">
+          <span class="nav-icon">&#x1F4E6;</span> Produtos
+        </a>
+        <a href="#" class="nav-item" data-section="avaliacoes">
+          <span class="nav-icon">&#x2B50;</span> Avaliacoes
+        </a>
+        <a href="#" class="nav-item" data-section="estatisticas">
+          <span class="nav-icon">&#x1F4C8;</span> Estatisticas
+        </a>
+        <a href="#" class="nav-item" data-section="perfil">
+          <span class="nav-icon">&#x1F464;</span> Meu Perfil
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn btn-outline btn-full" id="btn-logout">Sair</button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="top-bar">
+        <button class="menu-toggle" id="menu-toggle">&#9776;</button>
+        <div class="user-info">
+          <span id="user-name">Comerciante</span>
+          <span class="user-badge" id="user-badge">comerciante</span>
+        </div>
+      </header>
+
+      <!-- Visao Geral -->
+      <section id="section-overview" class="section active">
+        <h2>Visao Geral</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-number" id="stat-lojas">0</div>
+            <div class="stat-label">Minhas Lojas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="stat-produtos">0</div>
+            <div class="stat-label">Produtos</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="stat-avaliacoes">0</div>
+            <div class="stat-label">Avaliacoes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="stat-visitas">0</div>
+            <div class="stat-label">Visitas Total</div>
+          </div>
+        </div>
+        <div class="card mt-20">
+          <h3>Lojas Recentes</h3>
+          <div id="lojas-recentes"></div>
+        </div>
+      </section>
+
+      <!-- Minhas Lojas -->
+      <section id="section-lojas" class="section">
+        <div class="section-header">
+          <h2>Minhas Lojas</h2>
+          <button class="btn btn-primary" id="btn-nova-loja">+ Nova Loja</button>
+        </div>
+        <div id="lojas-lista" class="cards-grid"></div>
+
+        <!-- Modal Nova/Editar Loja -->
+        <div id="modal-loja" class="modal" style="display:none">
+          <div class="modal-content modal-large">
+            <div class="modal-header">
+              <h3 id="modal-loja-titulo">Nova Loja</h3>
+              <button class="modal-close" id="modal-loja-close">&times;</button>
+            </div>
+            <form id="form-loja">
+              <input type="hidden" id="loja-slug-edit">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="loja-nome">Nome *</label>
+                  <input type="text" id="loja-nome" required>
+                </div>
+                <div class="form-group">
+                  <label for="loja-categoria">Categoria *</label>
+                  <select id="loja-categoria" required></select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="loja-whatsapp">WhatsApp *</label>
+                  <input type="text" id="loja-whatsapp" placeholder="5516999999999" required>
+                </div>
+                <div class="form-group">
+                  <label for="loja-tel">Telefone</label>
+                  <input type="text" id="loja-tel" placeholder="16999999999">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="loja-endereco">Endereco *</label>
+                <input type="text" id="loja-endereco" required>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="loja-lat">Latitude</label>
+                  <input type="number" id="loja-lat" step="0.0001" value="-21.993">
+                </div>
+                <div class="form-group">
+                  <label for="loja-lng">Longitude</label>
+                  <input type="number" id="loja-lng" step="0.0001" value="-48.390">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="loja-horario">Horario *</label>
+                <input type="text" id="loja-horario" placeholder="Seg-Sex 8h as 18h" required>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="loja-emoji">Emoji</label>
+                  <input type="text" id="loja-emoji" placeholder="&#x1F3EA;" maxlength="4">
+                </div>
+                <div class="form-group">
+                  <label for="loja-aberto">Status</label>
+                  <select id="loja-aberto">
+                    <option value="true">Aberto</option>
+                    <option value="false">Fechado</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="loja-tags">Tags (separadas por virgula)</label>
+                <input type="text" id="loja-tags" placeholder="pizza, delivery, restaurante">
+              </div>
+              <div class="form-group">
+                <label for="loja-descricao">Descricao</label>
+                <textarea id="loja-descricao" rows="3" placeholder="Sobre sua loja..."></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-outline" id="btn-cancelar-loja">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar Loja</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- Produtos -->
+      <section id="section-produtos" class="section">
+        <div class="section-header">
+          <h2>Produtos / Catalogo</h2>
+        </div>
+        <div class="form-group">
+          <label for="produto-loja-select">Selecionar Loja</label>
+          <select id="produto-loja-select">
+            <option value="">-- Selecione uma loja --</option>
+          </select>
+        </div>
+        <div id="produtos-container" style="display:none">
+          <div class="section-header">
+            <h3 id="produtos-loja-nome"></h3>
+            <button class="btn btn-primary btn-sm" id="btn-novo-produto">+ Novo Produto</button>
+          </div>
+          <div id="produtos-lista" class="table-container"></div>
+
+          <!-- Promo -->
+          <div class="card mt-20">
+            <h3>Promocao</h3>
+            <form id="form-promo">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="promo-desc">Descricao</label>
+                  <input type="text" id="promo-desc" placeholder="Pizza + Refri">
+                </div>
+                <div class="form-group">
+                  <label for="promo-preco">Preco Promo</label>
+                  <input type="text" id="promo-preco" placeholder="R$52">
+                </div>
+                <div class="form-group">
+                  <label for="promo-original">Preco Original</label>
+                  <input type="text" id="promo-original" placeholder="R$72">
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-sm">Salvar Promo</button>
+                <button type="button" class="btn btn-danger btn-sm" id="btn-remover-promo">Remover</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Modal Produto -->
+        <div id="modal-produto" class="modal" style="display:none">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 id="modal-produto-titulo">Novo Produto</h3>
+              <button class="modal-close" id="modal-produto-close">&times;</button>
+            </div>
+            <form id="form-produto">
+              <input type="hidden" id="produto-id-edit">
+              <div class="form-group">
+                <label for="produto-nome">Nome *</label>
+                <input type="text" id="produto-nome" required>
+              </div>
+              <div class="form-group">
+                <label for="produto-descricao">Descricao</label>
+                <textarea id="produto-descricao" rows="2"></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="produto-preco">Preco (R$) *</label>
+                  <input type="number" id="produto-preco" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                  <label for="produto-disponivel">Disponivel</label>
+                  <select id="produto-disponivel">
+                    <option value="true">Sim</option>
+                    <option value="false">Nao</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-outline" id="btn-cancelar-produto">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar Produto</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- Avaliacoes -->
+      <section id="section-avaliacoes" class="section">
+        <h2>Avaliacoes das Lojas</h2>
+        <div id="avaliacoes-lista"></div>
+      </section>
+
+      <!-- Estatisticas -->
+      <section id="section-estatisticas" class="section">
+        <h2>Estatisticas</h2>
+        <div class="form-group">
+          <label for="stats-loja-select">Selecionar Loja</label>
+          <select id="stats-loja-select">
+            <option value="">-- Selecione uma loja --</option>
+          </select>
+        </div>
+        <div id="stats-container" style="display:none">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-number" id="stats-visitas">0</div>
+              <div class="stat-label">Visitas</div>
+            </div>
+            <div class="stat-card stat-whatsapp">
+              <div class="stat-number" id="stats-whatsapp">0</div>
+              <div class="stat-label">Cliques WhatsApp</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="stats-telefone">0</div>
+              <div class="stat-label">Cliques Telefone</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="stats-compartilhamento">0</div>
+              <div class="stat-label">Compartilhamentos</div>
+            </div>
+          </div>
+          <div class="card mt-20">
+            <h3>Eventos por Dia</h3>
+            <div id="stats-por-dia" class="table-container"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Perfil -->
+      <section id="section-perfil" class="section">
+        <h2>Meu Perfil</h2>
+        <div class="card">
+          <form id="form-perfil">
+            <div class="form-group">
+              <label for="perfil-nome">Nome</label>
+              <input type="text" id="perfil-nome">
+            </div>
+            <div class="form-group">
+              <label for="perfil-email">Email</label>
+              <input type="email" id="perfil-email" disabled>
+            </div>
+            <div class="form-group">
+              <label for="perfil-telefone">Telefone</label>
+              <input type="tel" id="perfil-telefone">
+            </div>
+            <hr>
+            <h3>Alterar Senha</h3>
+            <div class="form-group">
+              <label for="perfil-senha-atual">Senha Atual</label>
+              <input type="password" id="perfil-senha-atual">
+            </div>
+            <div class="form-group">
+              <label for="perfil-nova-senha">Nova Senha</label>
+              <input type="password" id="perfil-nova-senha" minlength="6">
+            </div>
+            <button type="submit" class="btn btn-primary">Salvar Alteracoes</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Toast -->
+      <div id="toast" class="toast" style="display:none"></div>
+    </main>
+  </div>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>
