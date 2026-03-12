@@ -150,6 +150,9 @@ app.use('/admin', (req, res, next) => {
   }
 }, express.static(path.join(__dirname, '..', 'admin')));
 
+// Servir painel do comerciante/usuario (autenticacao via JS no cliente)
+app.use('/painel', express.static(path.join(__dirname, '..', 'painel')));
+
 // Servir uploads locais (com cross-origin resource policy para imagens)
 app.use('/uploads', (req, res, next) => {
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
