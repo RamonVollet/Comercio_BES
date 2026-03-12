@@ -1,8 +1,7 @@
 // ===========================================
 // Controller - Estatisticas
 // ===========================================
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 // POST /api/estatisticas/registrar
 async function registrar(req, res, next) {
@@ -17,18 +16,23 @@ async function registrar(req, res, next) {
     }
 
     // Registrar evento
+    const comercioIdInt = parseInt(comercioId, 10);
+    if (isNaN(comercioIdInt)) {
+      return res.status(400).json({ error: 'comercioId invalido' });
+    }
+
     await prisma.estatistica.create({
       data: {
-        comercioId: parseInt(comercioId),
+        comercioId: comercioIdInt,
         tipo,
-        ip: req.ip || null
+        ip: null // Nao armazenar IPs por privacidade
       }
     });
 
     // Incrementar visitas no comercio se for visita
     if (tipo === 'visita') {
       await prisma.comercio.update({
-        where: { id: parseInt(comercioId) },
+        where: { id: comercioIdInt },
         data: { visitas: { increment: 1 } }
       });
     }
@@ -56,8 +60,9 @@ async function buscarPorComercio(req, res, next) {
     }
 
     const { periodo = '30' } = req.query; // dias
+    const periodoInt = Math.min(365, Math.max(1, parseInt(periodo, 10) || 30));
     const dataInicio = new Date();
-    dataInicio.setDate(dataInicio.getDate() - parseInt(periodo));
+    dataInicio.setDate(dataInicio.getDate() - periodoInt);
 
     const eventos = await prisma.estatistica.findMany({
       where: {
@@ -99,7 +104,7 @@ async function buscarPorComercio(req, res, next) {
 
     res.json({
       comercio: { id: comercio.id, nome: comercio.nome, slug: comercio.slug },
-      periodo: `${periodo} dias`,
+      periodo: `${periodoInt} dias`,
       resumo,
       porDia,
       totalEventos: eventos.length

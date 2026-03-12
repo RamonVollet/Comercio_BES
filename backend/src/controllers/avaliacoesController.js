@@ -1,8 +1,13 @@
 // ===========================================
 // Controller - Avaliacoes
 // ===========================================
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
+
+// Sanitizacao de texto - remove tags HTML para prevenir XSS
+function sanitize(str) {
+  if (str === null || str === undefined) return str;
+  return String(str).replace(/[<>]/g, '');
+}
 
 // GET /api/avaliacoes/:comercioSlug
 async function listarPorComercio(req, res, next) {
@@ -51,7 +56,8 @@ async function criar(req, res, next) {
   try {
     const { nota, comentario } = req.body;
 
-    if (!nota || nota < 1 || nota > 5) {
+    const notaInt = parseInt(nota, 10);
+    if (isNaN(notaInt) || notaInt < 1 || notaInt > 5) {
       return res.status(400).json({
         error: 'nota e obrigatoria e deve ser entre 1 e 5'
       });
@@ -69,8 +75,8 @@ async function criar(req, res, next) {
       data: {
         comercioId: comercio.id,
         userId: req.userId || null,
-        nota: parseInt(nota),
-        comentario: comentario || null
+        nota: notaInt,
+        comentario: sanitize(comentario) || null
       },
       include: {
         user: { select: { nome: true } }
@@ -109,8 +115,13 @@ async function criar(req, res, next) {
 // DELETE /api/avaliacoes/:id (admin ou autor)
 async function excluir(req, res, next) {
   try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'ID invalido' });
+    }
+
     const avaliacao = await prisma.avaliacao.findUnique({
-      where: { id: parseInt(req.params.id) }
+      where: { id }
     });
 
     if (!avaliacao) {
@@ -123,7 +134,7 @@ async function excluir(req, res, next) {
     }
 
     await prisma.avaliacao.delete({
-      where: { id: parseInt(req.params.id) }
+      where: { id }
     });
 
     res.json({ message: 'Avaliacao excluida' });

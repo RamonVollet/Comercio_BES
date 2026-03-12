@@ -44,9 +44,10 @@ function errorHandler(err, req, res, next) {
 
   // Erro generico
   const status = err.statusCode || 500;
-  res.status(status).json({
-    error: err.message || 'Erro interno do servidor'
-  });
+  const message = (status === 500 && process.env.NODE_ENV === 'production')
+    ? 'Erro interno do servidor'
+    : err.message || 'Erro interno do servidor';
+  res.status(status).json({ error: message });
 }
 
 module.exports = errorHandler;

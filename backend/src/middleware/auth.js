@@ -2,8 +2,6 @@
 // Middleware - Autenticacao JWT
 // ===========================================
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
 
 // Middleware que exige autenticacao
 function auth(req, res, next) {
@@ -16,7 +14,7 @@ function auth(req, res, next) {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
     req.userId = decoded.id;
     req.userTipo = decoded.tipo;
     next();
@@ -47,7 +45,7 @@ function authOptional(req, res, next) {
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
       req.userId = decoded.id;
       req.userTipo = decoded.tipo;
     } catch (err) {

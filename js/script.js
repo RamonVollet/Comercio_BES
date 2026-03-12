@@ -48,6 +48,17 @@ function storageSet(key, val) {
   localStorage.setItem(key, JSON.stringify(val));
 }
 
+// ===== SEGURANCA: Escape HTML para prevenir XSS =====
+function escapeHTML(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ===== AUTH MODULE =====
 const Auth = {
   getUsers() { return storageGet(KEYS.USERS) || []; },
@@ -104,7 +115,8 @@ const Auth = {
     }
     const user = {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      nome, email, tel, senha,
+      nome, email, tel,
+      senhaHash: btoa(senha), // Ofuscação básica — não é criptografia real, mas evita exposição em texto puro
       criadoEm: new Date().toISOString(),
       tipo: tipo || 'usuario'
     };
@@ -147,7 +159,7 @@ const Auth = {
 
     // Fallback localStorage
     const users = this.getUsers();
-    const user = users.find(u => u.email === email && u.senha === senha);
+    const user = users.find(u => u.email === email && u.senhaHash === btoa(senha));
     if (!user) return { ok: false, msg: 'E-mail ou senha incorretos.' };
     storageSet(KEYS.SESSION, { userId: user.id, nome: user.nome, email: user.email });
     return { ok: true, user };
@@ -417,7 +429,7 @@ function renderMapa() {
 
     const icon = L.divIcon({
       className: 'mapa-marker',
-      html: '<div class="marker-pin" style="background:' + cor + '"><span>' + c.emoji + '</span></div>',
+      html: '<div class="marker-pin" style="background:' + cor + '"><span>' + escapeHTML(c.emoji) + '</span></div>',
       iconSize: [40, 48],
       iconAnchor: [20, 48],
       popupAnchor: [0, -48]
@@ -428,19 +440,19 @@ function renderMapa() {
       : '<span style="color:#ff4444;font-weight:700;">✗ Fechado</span>';
 
     const promoLine = (c.promo && c.promo.ativo)
-      ? '<div style="margin-top:6px;font-size:12px;color:#FF6D00;">🔥 ' + c.promo.desc + ' — ' + c.promo.preco + '</div>'
+      ? '<div style="margin-top:6px;font-size:12px;color:#FF6D00;">🔥 ' + escapeHTML(c.promo.desc) + ' — ' + escapeHTML(c.promo.preco) + '</div>'
       : '';
 
     const popup = '<div class="map-popup">' +
-      '<div style="font-size:24px;text-align:center;margin-bottom:6px;">' + c.emoji + '</div>' +
-      '<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;text-align:center;">' + c.nome + '</div>' +
-      '<div style="font-size:12px;color:#888;text-align:center;margin:4px 0;">' + c.categoria.toUpperCase() + ' · ⭐ ' + c.rating + '</div>' +
-      '<div style="font-size:13px;text-align:center;margin:4px 0;">📍 ' + c.endereco + '</div>' +
+      '<div style="font-size:24px;text-align:center;margin-bottom:6px;">' + escapeHTML(c.emoji) + '</div>' +
+      '<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;text-align:center;">' + escapeHTML(c.nome) + '</div>' +
+      '<div style="font-size:12px;color:#888;text-align:center;margin:4px 0;">' + escapeHTML(c.categoria).toUpperCase() + ' · ⭐ ' + escapeHTML(String(c.rating)) + '</div>' +
+      '<div style="font-size:13px;text-align:center;margin:4px 0;">📍 ' + escapeHTML(c.endereco) + '</div>' +
       '<div style="font-size:13px;text-align:center;">' + statusBadge + '</div>' +
       promoLine +
       '<div style="display:flex;gap:6px;margin-top:10px;">' +
-        '<button onclick="abrirModal(' + c.id + ')" style="flex:1;background:#0A0A0A;color:#fff;border:none;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Ver perfil</button>' +
-        '<a href="https://wa.me/' + encodeURIComponent(c.whatsapp) + '" target="_blank" rel="noopener noreferrer" onclick="registrarEstatistica(' + c.id + ', \'whatsapp_click\')" style="flex:1;background:#25D366;color:#fff;border:none;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;text-align:center;">💬 WhatsApp</a>' +
+        '<button onclick="abrirModal(' + parseInt(c.id) + ')" style="flex:1;background:#0A0A0A;color:#fff;border:none;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Ver perfil</button>' +
+        '<a href="https://wa.me/' + encodeURIComponent(c.whatsapp) + '" target="_blank" rel="noopener noreferrer" onclick="registrarEstatistica(' + parseInt(c.id) + ', \'whatsapp_click\')" style="flex:1;background:#25D366;color:#fff;border:none;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;text-align:center;">💬 WhatsApp</a>' +
       '</div></div>';
 
     L.marker([c.lat, c.lng], { icon }).addTo(mapa).bindPopup(popup);
@@ -457,24 +469,24 @@ function criarCard(c) {
   const temCatalogo = c.catalogo && c.catalogo.length > 0;
   const isFav = Favorites.isFav(c.id);
 
-  return '<div class="store-card" onclick="abrirModal(' + c.id + ')">' +
+  return '<div class="store-card" onclick="abrirModal(' + parseInt(c.id) + ')">' +
     '<div class="store-img">' +
-      '<span>' + c.emoji + '</span>' +
+      '<span>' + escapeHTML(c.emoji) + '</span>' +
       openBadge +
-      '<button class="card-fav ' + (isFav ? 'active' : '') + '" onclick="event.stopPropagation(); toggleFavoritoCard(' + c.id + ', this)">' + (isFav ? '♥' : '♡') + '</button>' +
+      '<button class="card-fav ' + (isFav ? 'active' : '') + '" onclick="event.stopPropagation(); toggleFavoritoCard(' + parseInt(c.id) + ', this)">' + (isFav ? '♥' : '♡') + '</button>' +
     '</div>' +
     '<div class="store-body">' +
-      '<div class="store-cat">' + c.categoria.toUpperCase() + '</div>' +
-      '<div class="store-name">' + c.nome + '</div>' +
-      '<div class="store-addr">📍 ' + c.endereco + '</div>' +
+      '<div class="store-cat">' + escapeHTML(c.categoria).toUpperCase() + '</div>' +
+      '<div class="store-name">' + escapeHTML(c.nome) + '</div>' +
+      '<div class="store-addr">📍 ' + escapeHTML(c.endereco) + '</div>' +
       '<div class="store-stars">' + stars +
-        '<span class="store-rating-num">' + c.rating + '</span>' +
-        '<span class="store-reviews">(' + c.visitas + ' visitas)</span>' +
+        '<span class="store-rating-num">' + escapeHTML(String(c.rating)) + '</span>' +
+        '<span class="store-reviews">(' + parseInt(c.visitas) + ' visitas)</span>' +
       '</div>' +
       '<div class="store-actions">' +
-        '<a class="btn-whats" href="https://wa.me/' + encodeURIComponent(c.whatsapp) + '?text=' + encodeURIComponent('Olá! Encontrei seu comércio no Comércio BES. Gostaria de mais informações!') + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); registrarEstatistica(' + c.id + ', \'whatsapp_click\')">💬 WhatsApp</a>' +
-        (temCatalogo ? '<button class="btn-catalogo" onclick="event.stopPropagation(); abrirModal(' + c.id + ')">📋 Cardápio</button>' : '') +
-        '<button class="btn-perfil" onclick="event.stopPropagation(); abrirModal(' + c.id + ')">👁️</button>' +
+        '<a class="btn-whats" href="https://wa.me/' + encodeURIComponent(c.whatsapp) + '?text=' + encodeURIComponent('Olá! Encontrei seu comércio no Comércio BES. Gostaria de mais informações!') + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); registrarEstatistica(' + parseInt(c.id) + ', \'whatsapp_click\')">💬 WhatsApp</a>' +
+        (temCatalogo ? '<button class="btn-catalogo" onclick="event.stopPropagation(); abrirModal(' + parseInt(c.id) + ')">📋 Cardápio</button>' : '') +
+        '<button class="btn-perfil" onclick="event.stopPropagation(); abrirModal(' + parseInt(c.id) + ')">👁️</button>' +
       '</div>' +
     '</div>' +
   '</div>';
@@ -541,12 +553,12 @@ function buscarPorTermo(termo) {
 function renderPromos() {
   const promos = comercios.filter(c => c.promo && c.promo.ativo);
   document.getElementById('promos-grid').innerHTML = promos.map(c =>
-    '<div class="promo-card" onclick="abrirModal(' + c.id + ')">' +
+    '<div class="promo-card" onclick="abrirModal(' + parseInt(c.id) + ')">' +
       '<div class="promo-badge">🔥 Promoção</div>' +
-      '<div class="promo-store">' + c.emoji + ' ' + c.nome + '</div>' +
-      '<div class="promo-desc">' + c.promo.desc + '</div>' +
-      '<div><span class="promo-price">' + c.promo.preco + '</span>' +
-      '<span class="promo-original">' + c.promo.original + '</span></div>' +
+      '<div class="promo-store">' + escapeHTML(c.emoji) + ' ' + escapeHTML(c.nome) + '</div>' +
+      '<div class="promo-desc">' + escapeHTML(c.promo.desc) + '</div>' +
+      '<div><span class="promo-price">' + escapeHTML(c.promo.preco) + '</span>' +
+      '<span class="promo-original">' + escapeHTML(c.promo.original) + '</span></div>' +
     '</div>'
   ).join('');
 }
@@ -560,14 +572,14 @@ function renderRanking(tipo) {
 
   document.getElementById('ranking-list').innerHTML = ordenados.map((c, i) => {
     const cls = i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : '';
-    const val = tipo === 'rating' ? c.rating + ' ⭐'
-      : tipo === 'visitas' ? c.visitas + ' visitas'
-      : c.recomendados + ' ❤️';
-    return '<div class="ranking-item" onclick="abrirModal(' + c.id + ')">' +
+    const val = tipo === 'rating' ? escapeHTML(String(c.rating)) + ' ⭐'
+      : tipo === 'visitas' ? parseInt(c.visitas) + ' visitas'
+      : parseInt(c.recomendados) + ' ❤️';
+    return '<div class="ranking-item" onclick="abrirModal(' + parseInt(c.id) + ')">' +
       '<div class="rank-num ' + cls + '">' + (i + 1) + '°</div>' +
-      '<div class="rank-emoji">' + c.emoji + '</div>' +
-      '<div class="rank-info"><div class="rank-name">' + c.nome + '</div>' +
-      '<div class="rank-cat">' + c.categoria.charAt(0).toUpperCase() + c.categoria.slice(1) + '</div></div>' +
+      '<div class="rank-emoji">' + escapeHTML(c.emoji) + '</div>' +
+      '<div class="rank-info"><div class="rank-name">' + escapeHTML(c.nome) + '</div>' +
+      '<div class="rank-cat">' + escapeHTML(c.categoria.charAt(0).toUpperCase() + c.categoria.slice(1)) + '</div></div>' +
       '<div class="rank-score"><strong>' + val + '</strong><span>ranking</span></div></div>';
   }).join('');
 }
@@ -660,19 +672,19 @@ function abrirModal(id) {
   }
 
   document.getElementById('modal-info').innerHTML =
-    '<div class="modal-info-row"><span class="modal-info-icon">📍</span> ' + c.endereco + '</div>' +
-    '<div class="modal-info-row"><span class="modal-info-icon">🕐</span> ' + c.horario + '</div>' +
-    '<div class="modal-info-row"><span class="modal-info-icon">📞</span> ' + c.tel.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3') + '</div>' +
+    '<div class="modal-info-row"><span class="modal-info-icon">📍</span> ' + escapeHTML(c.endereco) + '</div>' +
+    '<div class="modal-info-row"><span class="modal-info-icon">🕐</span> ' + escapeHTML(c.horario) + '</div>' +
+    '<div class="modal-info-row"><span class="modal-info-icon">📞</span> ' + escapeHTML(c.tel.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')) + '</div>' +
     '<div class="modal-info-row"><span class="modal-info-icon">' + (c.aberto ? '✅' : '❌') + '</span> ' + (c.aberto ? 'Aberto agora' : 'Fechado no momento') + '</div>' +
-    (c.promo ? '<div class="modal-info-row"><span class="modal-info-icon">🔥</span> <strong>Promoção:</strong>&nbsp;' + c.promo.desc + ' — ' + c.promo.preco + '</div>' : '');
+    (c.promo ? '<div class="modal-info-row"><span class="modal-info-icon">🔥</span> <strong>Promoção:</strong>&nbsp;' + escapeHTML(c.promo.desc) + ' — ' + escapeHTML(c.promo.preco) + '</div>' : '');
 
   document.getElementById('modal-stars-big').innerHTML =
     gerarStars(c.rating) +
-    '<span class="modal-rating-big">' + c.rating + '</span>' +
-    '<span style="font-size:14px;color:#aaa;margin-left:8px;">(' + c.visitas + ' avaliações)</span>';
+    '<span class="modal-rating-big">' + escapeHTML(String(c.rating)) + '</span>' +
+    '<span style="font-size:14px;color:#aaa;margin-left:8px;">(' + parseInt(c.visitas) + ' avaliações)</span>';
 
   document.getElementById('modal-fotos').innerHTML = c.fotos.map(f =>
-    '<div class="foto-thumb">' + f + '</div>'
+    '<div class="foto-thumb">' + escapeHTML(f) + '</div>'
   ).join('');
 
   // Catálogo
@@ -686,9 +698,9 @@ function abrirModal(id) {
         c.catalogo.map((prod, idx) =>
           '<div class="catalogo-item">' +
             '<div class="catalogo-info">' +
-              '<div class="catalogo-nome">' + prod.nome_produto + '</div>' +
-              '<div class="catalogo-desc">' + prod.descricao + '</div>' +
-              '<div class="catalogo-preco">R$ ' + prod.preco.toFixed(2).replace('.', ',') + '</div>' +
+              '<div class="catalogo-nome">' + escapeHTML(prod.nome_produto) + '</div>' +
+              '<div class="catalogo-desc">' + escapeHTML(prod.descricao) + '</div>' +
+              '<div class="catalogo-preco">R$ ' + Number(prod.preco).toFixed(2).replace('.', ',') + '</div>' +
             '</div>' +
             '<div class="catalogo-qtd">' +
               '<button class="qtd-btn" onclick="alterarQtdModal(' + idx + ', -1)">−</button>' +
@@ -712,9 +724,9 @@ function abrirModal(id) {
 
   // Ações
   document.getElementById('modal-actions').innerHTML =
-    '<a class="btn-whats-big" href="https://wa.me/' + encodeURIComponent(c.whatsapp) + '?text=' + encodeURIComponent('Olá! Encontrei seu comércio no Comércio BES. Gostaria de mais informações!') + '" target="_blank" rel="noopener noreferrer" onclick="registrarEstatistica(' + c.id + ', \'whatsapp_click\')">💬 Falar no WhatsApp</a>' +
-    '<a class="btn-maps" href="https://www.openstreetmap.org/?mlat=' + c.lat + '&mlon=' + c.lng + '&zoom=17" target="_blank" rel="noopener noreferrer">🗺️ Ver no Mapa</a>' +
-    '<button class="btn-compartilhar" onclick="copiarLinkLoja(\'' + c.slug + '\')">🔗 Compartilhar Loja</button>';
+    '<a class="btn-whats-big" href="https://wa.me/' + encodeURIComponent(c.whatsapp) + '?text=' + encodeURIComponent('Olá! Encontrei seu comércio no Comércio BES. Gostaria de mais informações!') + '" target="_blank" rel="noopener noreferrer" onclick="registrarEstatistica(' + parseInt(c.id) + ', \'whatsapp_click\')">💬 Falar no WhatsApp</a>' +
+    '<a class="btn-maps" href="https://www.openstreetmap.org/?mlat=' + encodeURIComponent(c.lat) + '&mlon=' + encodeURIComponent(c.lng) + '&zoom=17" target="_blank" rel="noopener noreferrer">🗺️ Ver no Mapa</a>' +
+    '<button class="btn-compartilhar" onclick="copiarLinkLoja(\'' + escapeHTML(c.slug) + '\')">🔗 Compartilhar Loja</button>';
 
   document.getElementById('modal-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -910,19 +922,19 @@ function renderCarrinhoDrawer() {
   let html = '';
   Object.entries(byStore).forEach(([lojaId, store]) => {
     html += '<div class="drawer-store">';
-    html += '<div class="drawer-store-name">' + store.nome + '</div>';
+    html += '<div class="drawer-store-name">' + escapeHTML(store.nome) + '</div>';
     store.items.forEach(item => {
       const subtotal = item.produto.preco * item.qtd;
       html += '<div class="drawer-item">' +
         '<div class="drawer-item-info">' +
-          '<div class="drawer-item-name">' + item.produto.nome_produto + '</div>' +
-          '<div class="drawer-item-price">R$ ' + subtotal.toFixed(2).replace('.', ',') + '</div>' +
+          '<div class="drawer-item-name">' + escapeHTML(item.produto.nome_produto) + '</div>' +
+          '<div class="drawer-item-price">R$ ' + Number(subtotal).toFixed(2).replace('.', ',') + '</div>' +
         '</div>' +
         '<div class="drawer-item-controls">' +
-          '<button class="qtd-btn-sm" onclick="cartUpdateQtd(' + item.globalIdx + ', -1)">−</button>' +
-          '<span>' + item.qtd + '</span>' +
-          '<button class="qtd-btn-sm" onclick="cartUpdateQtd(' + item.globalIdx + ', 1)">+</button>' +
-          '<button class="drawer-remove" onclick="cartRemove(' + item.globalIdx + ')">🗑️</button>' +
+          '<button class="qtd-btn-sm" onclick="cartUpdateQtd(' + parseInt(item.globalIdx) + ', -1)">−</button>' +
+          '<span>' + parseInt(item.qtd) + '</span>' +
+          '<button class="qtd-btn-sm" onclick="cartUpdateQtd(' + parseInt(item.globalIdx) + ', 1)">+</button>' +
+          '<button class="drawer-remove" onclick="cartRemove(' + parseInt(item.globalIdx) + ')">🗑️</button>' +
         '</div>' +
       '</div>';
     });
@@ -985,8 +997,8 @@ function abrirCheckout() {
   let html = '';
   cart.forEach(item => {
     html += '<div class="checkout-item">' +
-      '<span>' + item.qtd + 'x ' + item.produto.nome_produto + '</span>' +
-      '<span>R$ ' + (item.produto.preco * item.qtd).toFixed(2).replace('.', ',') + '</span>' +
+      '<span>' + parseInt(item.qtd) + 'x ' + escapeHTML(item.produto.nome_produto) + '</span>' +
+      '<span>R$ ' + Number(item.produto.preco * item.qtd).toFixed(2).replace('.', ',') + '</span>' +
     '</div>';
   });
   document.getElementById('checkout-items').innerHTML = html;
@@ -1201,7 +1213,7 @@ function atualizarNavUser() {
     btn.textContent = '👤';
     btn.title = nome;
     menu.innerHTML =
-      '<div class="user-menu-header">Olá, <strong>' + nome + '</strong></div>' +
+      '<div class="user-menu-header">Olá, <strong>' + escapeHTML(nome) + '</strong></div>' +
       '<a class="user-menu-item" onclick="abrirPedidos()">📋 Meus Pedidos</a>' +
       '<a class="user-menu-item" onclick="abrirFavoritos()">❤️ Favoritos</a>' +
       '<a class="user-menu-item" onclick="abrirCadastroLoja()">➕ Cadastrar Loja</a>' +
@@ -1314,15 +1326,15 @@ function abrirPedidos() {
       const statusCor = o.status === 'pendente' ? '#FF6D00' : o.status === 'confirmado' ? '#00C853' : '#aaa';
       return '<div class="order-card">' +
         '<div class="order-header">' +
-          '<strong>' + o.id + '</strong>' +
-          '<span class="order-status" style="color:' + statusCor + '">' + o.status.toUpperCase() + '</span>' +
+          '<strong>' + escapeHTML(o.id) + '</strong>' +
+          '<span class="order-status" style="color:' + statusCor + '">' + escapeHTML(o.status).toUpperCase() + '</span>' +
         '</div>' +
-        '<div class="order-date">' + dataStr + '</div>' +
+        '<div class="order-date">' + escapeHTML(dataStr) + '</div>' +
         '<div class="order-items">' +
-          o.items.map(i => '<div>' + i.qtd + 'x ' + i.produto.nome_produto + ' <span style="color:#aaa">(' + i.lojaNome + ')</span></div>').join('') +
+          o.items.map(i => '<div>' + parseInt(i.qtd) + 'x ' + escapeHTML(i.produto.nome_produto) + ' <span style="color:#aaa">(' + escapeHTML(i.lojaNome) + ')</span></div>').join('') +
         '</div>' +
-        '<div class="order-total">Total: R$ ' + o.total.toFixed(2).replace('.', ',') + '</div>' +
-        '<div class="order-payment">Pagamento: ' + o.pagamento + '</div>' +
+        '<div class="order-total">Total: R$ ' + Number(o.total).toFixed(2).replace('.', ',') + '</div>' +
+        '<div class="order-payment">Pagamento: ' + escapeHTML(o.pagamento) + '</div>' +
       '</div>';
     }).join('');
   }
@@ -1412,8 +1424,8 @@ async function enviarAvaliacao() {
       // Atualizar exibição das estrelas no modal
       document.getElementById('modal-stars-big').innerHTML =
         gerarStars(data.mediaAtual) +
-        '<span class="modal-rating-big">' + data.mediaAtual + '</span>' +
-        '<span style="font-size:14px;color:#aaa;margin-left:8px;">(' + data.totalAvaliacoes + ' avaliações)</span>';
+        '<span class="modal-rating-big">' + escapeHTML(String(data.mediaAtual)) + '</span>' +
+        '<span style="font-size:14px;color:#aaa;margin-left:8px;">(' + parseInt(data.totalAvaliacoes) + ' avaliações)</span>';
 
       mostrarToast('✅ Avaliação de ' + avaliacao + '★ enviada para ' + comercioAtual.nome + '!');
     } catch (err) {

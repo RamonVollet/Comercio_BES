@@ -1,8 +1,7 @@
 // ===========================================
 // Controller - Categorias
 // ===========================================
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 // GET /api/categorias
 async function listar(req, res, next) {

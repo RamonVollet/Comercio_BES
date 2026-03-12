@@ -3,15 +3,33 @@
 // ===========================================
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
+
+// Validacao de email
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Placeholder JWT secret check
+const JWT_PLACEHOLDER = 'trocar-por-uma-chave-secreta-longa-e-aleatoria';
 
 function gerarToken(user) {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret === JWT_PLACEHOLDER) {
+    console.error('[SEGURANCA] JWT_SECRET nao configurado ou usando valor padrao! Altere no .env');
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET nao configurado para producao');
+    }
+  }
   return jwt.sign(
     { id: user.id, email: user.email, tipo: user.tipo },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    secret,
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d', algorithm: 'HS256' }
   );
+}
+
+// Sanitizar string - remover tags HTML
+function sanitize(str) {
+  if (!str || typeof str !== 'string') return str;
+  return str.replace(/[<>]/g, '').trim();
 }
 
 // POST /api/auth/registro
@@ -25,14 +43,24 @@ async function registro(req, res, next) {
       });
     }
 
+    // Validar formato do email
+    if (!EMAIL_REGEX.test(email)) {
+      return res.status(400).json({ error: 'Formato de email invalido' });
+    }
+
     if (senha.length < 6) {
       return res.status(400).json({
         error: 'A senha deve ter no minimo 6 caracteres'
       });
     }
 
+    // SEGURANCA: Bloquear escalation de role
+    // Apenas 'cliente' e 'comerciante' sao permitidos no registro publico
+    // 'admin' so pode ser definido diretamente no banco
+    const tipoPermitido = (tipo === 'comerciante') ? 'comerciante' : 'cliente';
+
     // Verificar se email ja existe
-    const existente = await prisma.user.findUnique({ where: { email } });
+    const existente = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
     if (existente) {
       return res.status(409).json({ error: 'Email ja cadastrado' });
     }
@@ -42,11 +70,11 @@ async function registro(req, res, next) {
 
     const user = await prisma.user.create({
       data: {
-        nome,
-        email,
+        nome: sanitize(nome),
+        email: email.toLowerCase().trim(),
         senha: senhaHash,
-        tipo: tipo || 'cliente',
-        telefone: telefone || null
+        tipo: tipoPermitido,
+        telefone: telefone ? sanitize(telefone) : null
       },
       select: { id: true, nome: true, email: true, tipo: true, createdAt: true }
     });
@@ -74,7 +102,7 @@ async function login(req, res, next) {
       });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
     if (!user) {
       return res.status(401).json({ error: 'Email ou senha incorretos' });
     }
@@ -135,8 +163,8 @@ async function atualizarPerfil(req, res, next) {
     const { nome, telefone, senhaAtual, novaSenha } = req.body;
     const data = {};
 
-    if (nome) data.nome = nome;
-    if (telefone !== undefined) data.telefone = telefone;
+    if (nome) data.nome = sanitize(nome);
+    if (telefone !== undefined) data.telefone = telefone ? sanitize(telefone) : null;
 
     // Alterar senha
     if (novaSenha) {

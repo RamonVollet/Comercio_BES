@@ -1,9 +1,14 @@
 // ===========================================
 // Controller - Comercios
 // ===========================================
-const { PrismaClient } = require('@prisma/client');
 const slugify = require('slugify');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
+
+// Sanitizacao de texto - remove tags HTML para prevenir XSS
+function sanitize(str) {
+  if (str === null || str === undefined) return str;
+  return String(str).replace(/[<>]/g, '');
+}
 
 // Formatar comercio para resposta (converte JSON strings em arrays)
 function formatarComercio(c) {
@@ -123,8 +128,8 @@ async function listar(req, res, next) {
         break;
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    const take = parseInt(limit);
+    const skip = (Math.max(1, parseInt(page, 10) || 1) - 1) * Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+    const take = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
 
     const [comercios, total] = await Promise.all([
       prisma.comercio.findMany({
@@ -141,7 +146,7 @@ async function listar(req, res, next) {
       comercios: comercios.map(formatarComercio),
       paginacao: {
         total,
-        pagina: parseInt(page),
+        pagina: Math.max(1, parseInt(page, 10) || 1),
         porPagina: take,
         totalPaginas: Math.ceil(total / take)
       }
@@ -191,9 +196,20 @@ async function criar(req, res, next) {
       });
     }
 
+    // Validar whatsapp - apenas digitos
+    const whatsappLimpo = whatsapp.replace(/\D/g, '');
+    if (whatsappLimpo.length < 10 || whatsappLimpo.length > 15) {
+      return res.status(400).json({ error: 'Numero de WhatsApp invalido' });
+    }
+
     // Verificar se categoria existe
+    const catId = parseInt(categoriaId, 10);
+    if (isNaN(catId)) {
+      return res.status(400).json({ error: 'categoriaId invalido' });
+    }
+
     const categoria = await prisma.categoria.findUnique({
-      where: { id: parseInt(categoriaId) }
+      where: { id: catId }
     });
     if (!categoria) {
       return res.status(400).json({ error: 'Categoria nao encontrada' });
@@ -210,18 +226,18 @@ async function criar(req, res, next) {
     const comercio = await prisma.comercio.create({
       data: {
         slug,
-        nome,
-        categoriaId: parseInt(categoriaId),
+        nome: sanitize(nome),
+        categoriaId: catId,
         tags: JSON.stringify(tags || []),
-        emoji: emoji || categoria.emoji || '',
-        descricao: descricao || null,
+        emoji: sanitize(emoji) || categoria.emoji || '',
+        descricao: sanitize(descricao) || null,
         aberto: aberto !== undefined ? aberto : true,
-        endereco,
+        endereco: sanitize(endereco),
         lat: parseFloat(lat) || 0,
         lng: parseFloat(lng) || 0,
-        tel: tel || null,
-        whatsapp,
-        horario,
+        tel: sanitize(tel) || null,
+        whatsapp: whatsappLimpo,
+        horario: sanitize(horario),
         fotos: JSON.stringify(fotos || []),
         ownerId: req.userId
       },
@@ -261,20 +277,28 @@ async function atualizar(req, res, next) {
 
     const data = {};
     if (nome !== undefined) {
-      data.nome = nome;
+      data.nome = sanitize(nome);
       data.slug = slugify(nome, { lower: true, strict: true });
     }
-    if (categoriaId !== undefined) data.categoriaId = parseInt(categoriaId);
+    if (categoriaId !== undefined) {
+      const catId = parseInt(categoriaId, 10);
+      if (!isNaN(catId)) data.categoriaId = catId;
+    }
     if (tags !== undefined) data.tags = JSON.stringify(tags);
-    if (emoji !== undefined) data.emoji = emoji;
-    if (descricao !== undefined) data.descricao = descricao;
+    if (emoji !== undefined) data.emoji = sanitize(emoji);
+    if (descricao !== undefined) data.descricao = sanitize(descricao);
     if (aberto !== undefined) data.aberto = aberto;
-    if (endereco !== undefined) data.endereco = endereco;
+    if (endereco !== undefined) data.endereco = sanitize(endereco);
     if (lat !== undefined) data.lat = parseFloat(lat);
     if (lng !== undefined) data.lng = parseFloat(lng);
-    if (tel !== undefined) data.tel = tel;
-    if (whatsapp !== undefined) data.whatsapp = whatsapp;
-    if (horario !== undefined) data.horario = horario;
+    if (tel !== undefined) data.tel = sanitize(tel);
+    if (whatsapp !== undefined) {
+      const whatsappLimpo = String(whatsapp).replace(/\D/g, '');
+      if (whatsappLimpo.length >= 10 && whatsappLimpo.length <= 15) {
+        data.whatsapp = whatsappLimpo;
+      }
+    }
+    if (horario !== undefined) data.horario = sanitize(horario);
     if (fotos !== undefined) data.fotos = JSON.stringify(fotos);
 
     const comercio = await prisma.comercio.update({
@@ -342,12 +366,12 @@ async function adicionarProduto(req, res, next) {
     const produto = await prisma.produto.create({
       data: {
         comercioId: comercio.id,
-        nome,
-        descricao: descricao || '',
+        nome: sanitize(nome),
+        descricao: sanitize(descricao) || '',
         preco: parseFloat(preco),
         imagem: imagem || null,
         disponivel: disponivel !== undefined ? disponivel : true,
-        ordem: parseInt(ordem) || 0
+        ordem: parseInt(ordem, 10) || 0
       }
     });
 
@@ -372,18 +396,31 @@ async function atualizarProduto(req, res, next) {
       return res.status(403).json({ error: 'Sem permissao' });
     }
 
+    const produtoId = parseInt(req.params.produtoId, 10);
+    if (isNaN(produtoId)) {
+      return res.status(400).json({ error: 'produtoId invalido' });
+    }
+
+    // Verificar que o produto pertence a este comercio (prevenir IDOR)
+    const produtoExistente = await prisma.produto.findFirst({
+      where: { id: produtoId, comercioId: comercio.id }
+    });
+    if (!produtoExistente) {
+      return res.status(404).json({ error: 'Produto nao encontrado neste comercio' });
+    }
+
     const { nome, descricao, preco, imagem, disponivel, ordem } = req.body;
     const data = {};
 
-    if (nome !== undefined) data.nome = nome;
-    if (descricao !== undefined) data.descricao = descricao;
+    if (nome !== undefined) data.nome = sanitize(nome);
+    if (descricao !== undefined) data.descricao = sanitize(descricao);
     if (preco !== undefined) data.preco = parseFloat(preco);
     if (imagem !== undefined) data.imagem = imagem;
     if (disponivel !== undefined) data.disponivel = disponivel;
-    if (ordem !== undefined) data.ordem = parseInt(ordem);
+    if (ordem !== undefined) data.ordem = parseInt(ordem, 10) || 0;
 
     const produto = await prisma.produto.update({
-      where: { id: parseInt(req.params.produtoId) },
+      where: { id: produtoId },
       data
     });
 
@@ -408,8 +445,21 @@ async function excluirProduto(req, res, next) {
       return res.status(403).json({ error: 'Sem permissao' });
     }
 
+    const produtoId = parseInt(req.params.produtoId, 10);
+    if (isNaN(produtoId)) {
+      return res.status(400).json({ error: 'produtoId invalido' });
+    }
+
+    // Verificar que o produto pertence a este comercio (prevenir IDOR)
+    const produtoExistente = await prisma.produto.findFirst({
+      where: { id: produtoId, comercioId: comercio.id }
+    });
+    if (!produtoExistente) {
+      return res.status(404).json({ error: 'Produto nao encontrado neste comercio' });
+    }
+
     await prisma.produto.delete({
-      where: { id: parseInt(req.params.produtoId) }
+      where: { id: produtoId }
     });
 
     res.json({ message: 'Produto excluido' });
@@ -446,15 +496,15 @@ async function definirPromocao(req, res, next) {
       create: {
         comercioId: comercio.id,
         ativo: ativo !== undefined ? ativo : true,
-        descricao,
-        preco,
-        original
+        descricao: sanitize(descricao),
+        preco: sanitize(preco),
+        original: sanitize(original)
       },
       update: {
         ativo: ativo !== undefined ? ativo : true,
-        descricao,
-        preco,
-        original
+        descricao: sanitize(descricao),
+        preco: sanitize(preco),
+        original: sanitize(original)
       }
     });
 
