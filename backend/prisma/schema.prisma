@@ -16,6 +16,9 @@ datasource db {
 }
 
 // --- Usuarios (comerciantes, clientes, admin) ---
+// tipo: "cliente" | "comerciante" | "admin"
+// Comerciantes preenchem: nomeFantasia, cpfCnpj, enderecoComercial, telefoneComercial
+// Clientes preenchem: cpf, enderecos (via Endereco model)
 model User {
   id        Int      @id @default(autoincrement())
   nome      String
@@ -23,13 +26,48 @@ model User {
   senha     String
   tipo      String   @default("cliente") // cliente | comerciante | admin
   telefone  String?
+  avatar    String?  // URL da foto de perfil
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  comercios  Comercio[]
-  avaliacoes Avaliacao[]
+  // --- Campos exclusivos COMERCIANTE ---
+  nomeFantasia      String?  // Nome fantasia do negocio
+  cpfCnpj           String?  // CPF ou CNPJ do comerciante
+  enderecoComercial String?  // Endereco comercial
+  telefoneComercial String?  // Telefone comercial / WhatsApp do negocio
+
+  // --- Campos exclusivos CLIENTE ---
+  cpf String? // CPF do cliente (para pagamentos)
+
+  // --- Relacoes ---
+  comercios   Comercio[]
+  avaliacoes  Avaliacao[]
+  enderecos   Endereco[]
+  pedidos     Pedido[]     @relation("ClientePedidos")
 
   @@map("users")
+}
+
+// --- Enderecos de entrega (clientes podem ter varios) ---
+model Endereco {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  apelido    String   @default("Casa") // Casa, Trabalho, etc.
+  rua        String
+  numero     String
+  complemento String?
+  bairro     String
+  cidade     String   @default("Boa Esperança do Sul")
+  estado     String   @default("SP")
+  cep        String
+  principal  Boolean  @default(false) // Endereco padrao
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pedidos Pedido[]
+
+  @@map("enderecos")
 }
 
 // --- Categorias ---
@@ -73,6 +111,7 @@ model Comercio {
   promocao     Promocao?
   avaliacoes   Avaliacao[]
   estatisticas Estatistica[]
+  pedidos      Pedido[]
 
   @@map("comercios")
 }
@@ -91,6 +130,7 @@ model Produto {
   updatedAt   DateTime @updatedAt
 
   comercio Comercio @relation(fields: [comercioId], references: [id], onDelete: Cascade)
+  itensPedido ItemPedido[]
 
   @@map("produtos")
 }
@@ -137,4 +177,76 @@ model Estatistica {
   comercio Comercio @relation(fields: [comercioId], references: [id], onDelete: Cascade)
 
   @@map("estatisticas")
+}
+
+// ===========================================
+// FASE 4 — Marketplace / Pedidos / Pagamentos
+// ===========================================
+
+// --- Pedidos ---
+// status: pendente | confirmado | preparando | saiu_entrega | entregue | cancelado
+// tipoEntrega: entrega | retirada
+model Pedido {
+  id            Int      @id @default(autoincrement())
+  codigo        String   @unique // Codigo curto legivel: "BES-00001"
+  clienteId     Int
+  comercioId    Int
+  enderecoId    Int?     // Null se retirada no local
+  status        String   @default("pendente")
+  tipoEntrega   String   @default("entrega") // entrega | retirada
+  subtotal      Float    // Soma dos itens
+  taxaEntrega   Float    @default(0)
+  desconto      Float    @default(0)
+  total         Float    // subtotal + taxaEntrega - desconto
+  observacao    String?  // Observacoes do cliente
+  motivoCancelamento String? // Se cancelado, motivo
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  cliente   User       @relation("ClientePedidos", fields: [clienteId], references: [id])
+  comercio  Comercio   @relation(fields: [comercioId], references: [id])
+  endereco  Endereco?  @relation(fields: [enderecoId], references: [id])
+  itens     ItemPedido[]
+  pagamento Pagamento?
+
+  @@map("pedidos")
+}
+
+// --- Itens do Pedido (snapshot do produto no momento da compra) ---
+model ItemPedido {
+  id         Int    @id @default(autoincrement())
+  pedidoId   Int
+  produtoId  Int?   // Referencia opcional (produto pode ser excluido depois)
+  nome       String // Snapshot do nome do produto
+  preco      Float  // Snapshot do preco no momento
+  quantidade Int    @default(1)
+
+  pedido  Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  produto Produto? @relation(fields: [produtoId], references: [id], onDelete: SetNull)
+
+  @@map("itens_pedido")
+}
+
+// --- Pagamentos (Mercado Pago) ---
+// metodo: pix | cartao_credito | cartao_debito | boleto | na_entrega
+// status: pendente | aprovado | recusado | devolvido | em_analise
+model Pagamento {
+  id                Int      @id @default(autoincrement())
+  pedidoId          Int      @unique
+  mercadoPagoId     String?  // ID da transacao no Mercado Pago
+  preferenceId      String?  // ID da preferencia de pagamento MP
+  metodo            String?  // pix | cartao_credito | cartao_debito | boleto | na_entrega
+  status            String   @default("pendente")
+  valor             Float
+  pixQrCode         String?  // QR code PIX (base64 ou copia-cola)
+  pixQrCodeBase64   String?  // Imagem do QR code
+  mercadoPagoStatus String?  // Status raw do MP
+  detalhes          String?  // JSON com detalhes extras do MP
+  paidAt            DateTime? // Quando foi pago
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  pedido Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  @@map("pagamentos")
 }

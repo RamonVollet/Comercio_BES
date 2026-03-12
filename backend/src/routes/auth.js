@@ -10,8 +10,14 @@ const ctrl = require('../controllers/authController');
 router.post('/registro', ctrl.registro);
 router.post('/login', ctrl.login);
 
-// Protegidas
+// Protegidas - Perfil
 router.get('/perfil', auth, ctrl.perfil);
 router.put('/perfil', auth, ctrl.atualizarPerfil);
+
+// Protegidas - Enderecos de entrega
+router.get('/enderecos', auth, ctrl.listarEnderecos);
+router.post('/enderecos', auth, ctrl.criarEndereco);
+router.put('/enderecos/:id', auth, ctrl.atualizarEndereco);
+router.delete('/enderecos/:id', auth, ctrl.excluirEndereco);
 
 module.exports = router;

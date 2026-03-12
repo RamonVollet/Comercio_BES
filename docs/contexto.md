@@ -28,69 +28,109 @@ Uma plataforma web (mobile-first) que:
 
 ## Stack Atual
 
-| Camada   | Tecnologia                          |
-| -------- | ----------------------------------- |
-| Frontend | HTML5 + CSS3 + JavaScript (vanilla) |
-| Dados    | JSON estático (`data/data.json`)    |
-| Fontes   | Google Fonts (Syne, DM Sans)        |
-| Mapa     | OpenStreetMap (embed)               |
+| Camada       | Tecnologia                                                    |
+| ------------ | ------------------------------------------------------------- |
+| Frontend     | HTML5 + CSS3 + JavaScript (vanilla), PWA (Service Worker)     |
+| Backend/API  | Node.js + Express.js                                          |
+| Banco        | SQLite (dev) via Prisma ORM — PostgreSQL/MySQL para produção  |
+| Auth         | JWT (HS256) + bcrypt                                          |
+| Segurança    | Helmet, CSP, CORS allowlist, rate-limiting, sanitização       |
+| Upload       | Multer (local) + Cloudinary (opcional)                        |
+| Fontes       | Google Fonts (Syne, DM Sans)                                  |
+| Mapa         | Leaflet + OpenStreetMap (com SRI)                             |
+| Logging      | Morgan (request logging)                                      |
 
-## Stack Planejada (Médio Prazo)
+## Stack Planejada (Próximas Fases)
 
 | Camada       | Tecnologia                           |
 | ------------ | ------------------------------------ |
-| Frontend     | React ou Next.js                     |
-| Backend/API  | Node.js + Express ou Fastify         |
-| Banco        | PostgreSQL ou MongoDB                |
-| Auth         | JWT + bcrypt                         |
-| Hospedagem   | Vercel (front) + Railway (back)      |
+| Frontend     | React ou Next.js (migração futura)   |
+| Banco (prod) | PostgreSQL (Supabase) ou MySQL (Hostinger) |
+| Hospedagem   | Vercel (front) + Railway/Render (back) |
 | CDN/Imagens  | Cloudinary ou Supabase Storage       |
+| Notificações | Push API / Web Push                  |
+| Pagamento    | PIX via Mercado Pago / Stripe        |
 
 ## Estrutura de Pastas Atual
 
 ```
 comercio_bes/
 ├── index.html              # Página principal (SPA-like)
+├── manifest.json           # PWA manifest
+├── sw.js                   # Service Worker (cache offline)
 ├── data/
-│   └── data.json           # Base de dados dos comércios
+│   └── data.json           # Base de dados estática (fallback)
 ├── css/
 │   └── style.css           # Estilos globais
 ├── js/
-│   └── script.js           # Lógica principal (fetch, render, carrinho)
+│   └── script.js           # Lógica principal (fetch, render, carrinho, auth)
+├── backend/
+│   ├── package.json        # Dependências do backend
+│   ├── .env                # Variáveis de ambiente (JWT_SECRET, etc.)
+│   ├── prisma/
+│   │   ├── schema.prisma   # Schema do banco (7 modelos)
+│   │   ├── seed.js         # Script de seed (importa data.json)
+│   │   └── dev.db          # SQLite de desenvolvimento
+│   └── src/
+│       ├── server.js       # Servidor Express (Helmet, CORS, rate-limit)
+│       ├── lib/
+│       │   └── prisma.js   # PrismaClient singleton
+│       ├── controllers/    # Lógica de negócio (auth, comercios, avaliacoes, etc.)
+│       ├── middleware/      # Auth JWT, error handler
+│       ├── routes/          # Rotas da API REST
+│       ├── admin/           # Painel administrativo (HTML/CSS/JS)
+│       └── uploads/         # Imagens enviadas via upload
 ├── docs/
 │   ├── contexto.md         # Este arquivo
 │   ├── roadmap.md          # Plano de evolução
+│   ├── security-audit.md   # Relatório da auditoria de segurança
 │   └── skills.md           # Skills técnicas necessárias
 └── README.md               # Documentação do projeto
 ```
 
-## Modelo de Dados (data.json)
+## Modelo de Dados (Prisma Schema)
 
-Cada comércio é um objeto com:
+O banco possui 7 modelos:
+
+| Modelo       | Descrição                              |
+| ------------ | -------------------------------------- |
+| User         | Usuários (admin, comerciante, cliente) |
+| Categoria    | Categorias de comércio                 |
+| Comercio     | Estabelecimentos com todos os dados    |
+| Produto      | Catálogo de produtos por comércio      |
+| Promocao     | Promoções ativas por comércio          |
+| Avaliacao    | Avaliações com nota e comentário       |
+| Estatistica  | Eventos (visitas, cliques WhatsApp)    |
+
+Exemplo de comércio (via API):
 
 ```json
 {
   "id": 1,
   "slug": "pizzaria-bella-massa",
   "nome": "Pizzaria Bella Massa",
-  "categoria": "restaurante",
+  "categoria": "Restaurante",
+  "categoriaSlug": "restaurante",
   "tags": ["pizza", "delivery"],
   "emoji": "🍕",
   "rating": 4.8,
+  "totalAvaliacoes": 4,
   "visitas": 1240,
   "recomendados": 98,
   "aberto": true,
   "endereco": "Rua XV de Novembro, 45",
+  "lat": -21.9925,
+  "lng": -48.3912,
   "tel": "16991112222",
   "whatsapp": "5516991112222",
   "horario": "Ter-Dom · 18h às 23h",
-  "fotos": ["🍕", "🍝", "🥗"],
-  "promo": { "ativo": true, "desc": "...", "preco": "R$52", "original": "R$72" },
   "catalogo": [
-    { "nome_produto": "Pizza Grande Margherita", "descricao": "...", "preco": 42.00 }
+    { "nome": "Pizza Grande Margherita", "descricao": "...", "preco": 42.00 }
   ]
 }
 ```
+
+> O frontend faz fallback para `data/data.json` quando a API não está disponível.
 
 ## Fluxo do Usuário
 
@@ -104,11 +144,15 @@ Welcome Screen → Explorar Comércios → Buscar/Filtrar → Ver Detalhes (moda
 
 ## Decisões Técnicas
 
-1. **Vanilla JS** — Mantido por simplicidade no estágio atual; migração para React planejada
-2. **fetch() + JSON** — Simula consumo de API REST; troca futura é trivial
-3. **Deep linking via query string** — Permite compartilhar links de lojas sem roteador SPA
-4. **WhatsApp como canal de pedido** — Elimina necessidade de sistema de pagamento próprio
-5. **Sem framework CSS** — CSS customizado para identidade visual única da cidade
+1. **Vanilla JS** — Mantido por simplicidade; migração para React planejada para Fase 5+
+2. **API REST + fallback JSON** — Frontend busca da API com fallback para `data.json` (funciona offline)
+3. **Prisma ORM** — Abstração do banco, fácil trocar SQLite (dev) por PostgreSQL/MySQL (prod)
+4. **Deep linking via query string** — Permite compartilhar links de lojas sem roteador SPA
+5. **WhatsApp como canal de pedido** — Elimina necessidade de sistema de pagamento próprio
+6. **Sem framework CSS** — CSS customizado para identidade visual única da cidade
+7. **JWT + bcrypt** — Autenticação stateless, segura, com expiração configurável
+8. **Helmet + CSP** — Segurança de headers configurada desde o início
+9. **SRI nos CDNs** — Integridade de recursos externos verificada (Leaflet)
 
 ## Diferencial
 

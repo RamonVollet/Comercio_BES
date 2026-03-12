@@ -16,6 +16,8 @@ const categoriasRoutes = require('./routes/categorias');
 const avaliacoesRoutes = require('./routes/avaliacoes');
 const uploadRoutes = require('./routes/upload');
 const estatisticasRoutes = require('./routes/estatisticas');
+const pedidosRoutes = require('./routes/pedidos');
+const pagamentosRoutes = require('./routes/pagamentos');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,12 +30,12 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://sdk.mercadopago.com", "https://http2.mlstatic.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://unpkg.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https://*.tile.openstreetmap.org", "https://res.cloudinary.com", "blob:"],
-      connectSrc: ["'self'", "http://localhost:3000", "https://unpkg.com"],
-      frameSrc: ["'none'"],
+      imgSrc: ["'self'", "data:", "https://*.tile.openstreetmap.org", "https://res.cloudinary.com", "https://http2.mlstatic.com", "blob:"],
+      connectSrc: ["'self'", "http://localhost:3000", "https://unpkg.com", "https://api.mercadopago.com", "https://api.mercadolibre.com"],
+      frameSrc: ["https://sdk.mercadopago.com", "https://*.mercadopago.com"],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
@@ -161,21 +163,26 @@ app.use('/api/categorias', categoriasRoutes);
 app.use('/api/avaliacoes', avaliacoesRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/estatisticas', estatisticasRoutes);
+app.use('/api/pedidos', pedidosRoutes);
+app.use('/api/pagamentos', pagamentosRoutes);
 
 // Rota raiz da API
 app.get('/api', (req, res) => {
   res.json({
     nome: 'Comercio BES API',
-    versao: '1.0.0',
+    versao: '2.0.0',
     descricao: 'API REST do guia comercial de Boa Esperanca do Sul',
     endpoints: {
       auth: '/api/auth',
       comercios: '/api/comercios',
       categorias: '/api/categorias',
       avaliacoes: '/api/avaliacoes',
+      pedidos: '/api/pedidos',
+      pagamentos: '/api/pagamentos',
       upload: '/api/upload',
       estatisticas: '/api/estatisticas',
-      admin: '/admin'
+      admin: '/admin',
+      painel: '/painel'
     }
   });
 });

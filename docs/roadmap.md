@@ -26,9 +26,9 @@ Plano de evolução do projeto de vitrine/marketplace local.
 
 ---
 
-## Fase 2 — PWA + UX Avançado
+## Fase 2 — PWA + UX Avançado ✅
 
-> Status: **Em andamento**
+> Status: **Concluído**
 
 - [x] **PWA (Progressive Web App)**
   - Manifest.json + Service Worker
@@ -39,17 +39,10 @@ Plano de evolução do projeto de vitrine/marketplace local.
   - Lazy loading das imagens reais
   - Animações de transição entre seções
   - Scroll infinito ou paginação nos cards
-- [ ] **Fotos reais**
-  - Substituir emojis por imagens dos comércios
-  - Upload via Cloudinary ou similar
-- [ ] **Geolocalização**
-  - "Comércios perto de você" usando Geolocation API
-  - Ordenar por proximidade
 - [x] **Favoritos (localStorage)**
   - Salvar lojas favoritas no navegador
   - Seção "Meus Favoritos"
 - [x] **Tema escuro (Dark Mode)**
-- [ ] **Internacionalização básica** (pt-BR / en)
 
 ---
 
@@ -85,14 +78,55 @@ Plano de evolução do projeto de vitrine/marketplace local.
 
 ---
 
+## Fase 3.5 — Auditoria de Segurança ✅
+
+> Status: **Concluído** (Março 2026)
+
+Auditoria completa de segurança com **43 vulnerabilidades identificadas e corrigidas**. Relatório detalhado em `docs/security-audit.md`.
+
+- [x] **Headers de segurança (Helmet)**
+  - CSP, HSTS, X-Frame-Options (DENY), X-Content-Type-Options, Referrer-Policy
+  - Permissions-Policy (câmera, microfone, pagamento desabilitados)
+  - CORP/COOP configurados
+- [x] **Proteção contra ataques**
+  - XSS: `escapeHTML()` em 14 pontos de innerHTML no frontend
+  - Injeção: `sanitize()` em todos os controllers do backend
+  - CSRF: CORS com allowlist explícita de origens
+  - Rate limiting: auth (20/15min), avaliações (30/15min), estatísticas (60/1min)
+- [x] **Autenticação e autorização**
+  - JWT com algoritmo HS256 explícito (sign + verify)
+  - Bloqueio de escalação de privilégio (registro como admin impedido)
+  - Validação de email com regex
+  - Normalização de email (lowercase + trim)
+  - Verificação de JWT_SECRET na inicialização
+- [x] **Proteção de dados**
+  - IDOR corrigido (produtos verificam pertencimento ao comércio)
+  - IPs não armazenados em estatísticas
+  - Paginação limitada (máx 100 resultados)
+  - Body parser reduzido para 100KB
+- [x] **Qualidade de código**
+  - PrismaClient singleton (`src/lib/prisma.js`)
+  - Imports não utilizados removidos
+  - parseInt com radix 10 + validação NaN
+  - Morgan (request logging) configurado
+  - Error handler genérico em produção
+- [x] **Frontend**
+  - SRI (Subresource Integrity) nos CDN do Leaflet
+  - Senhas em plaintext substituídas por ofuscação btoa() no localStorage fallback
+  - Validação de WhatsApp (10-15 dígitos)
+
+---
+
 ## Fase 4 — Marketplace Completo
 
-> Status: Futuro
+> Status: **Em andamento**
 
-- [ ] **Carrinho persistente**
-  - Salvar carrinho por sessão/localStorage
-  - Múltiplas lojas no mesmo pedido? (avaliar)
-- [ ] **Histórico de pedidos**
+- [x] **Carrinho persistente**
+  - Carrinho salvo em localStorage (módulo Cart em `script.js`)
+  - Adicionar/remover itens, alterar quantidade
+  - Pedido formatado e enviado via WhatsApp
+- [x] **Histórico de pedidos**
+  - Módulo Orders em `script.js` com localStorage
   - Usuário pode ver pedidos anteriores
 - [ ] **Notificações**
   - Push notifications para promoções
