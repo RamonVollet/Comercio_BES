@@ -563,11 +563,8 @@
 
   /* ===== MAIN SITE ===== */
   #main-site {
-    opacity: 0;
-    transition: opacity 0.8s ease 0.3s;
+    opacity: 1;
   }
-
-  #main-site.visible { opacity: 1; }
 
   /* ===== NAVBAR ===== */
   nav {

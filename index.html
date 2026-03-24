@@ -239,35 +239,6 @@
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></symbol>
 </svg>
 
-<!-- ===== WELCOME SCREEN ===== -->
-<div id="welcome-screen">
-  <div class="welcome-bg">
-    <div class="welcome-grid"></div>
-  </div>
-  <div class="welcome-content">
-    <div class="welcome-badge"><svg class="icon icon-sm"><use href="#i-map-pin"></use></svg> Boa Esperança do Sul — SP</div>
-    <h1 class="welcome-title">Comércio<br><span>BES</span></h1>
-    <p class="welcome-subtitle">O guia completo do comércio local</p>
-    <p class="welcome-city">Boa Esperança do Sul</p>
-    <button class="welcome-btn" onclick="entrarNoSite()">
-      Explorar comércios →
-    </button>
-    <div class="welcome-stats">
-      <div class="welcome-stat">
-        <strong>80+</strong>
-        <span>Comércios</span>
-      </div>
-      <div class="welcome-stat">
-        <strong>12</strong>
-        <span>Categorias</span>
-      </div>
-      <div class="welcome-stat">
-        <strong>100%</strong>
-        <span>Local</span>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- ===== MAIN SITE ===== -->
 <div id="main-site">
@@ -682,12 +653,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// ===== WELCOME SCREEN =====
-function entrarNoSite() {
-  document.getElementById('welcome-screen').classList.add('hidden');
-  document.getElementById('main-site').classList.add('visible');
-}
-
 // ===== AUTH STATE =====
 function verificarLogin() {
   const loginBtn = document.getElementById('nav-login');
@@ -727,11 +692,6 @@ function toggleContaMenu() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Se veio de login/cadastro, pular a welcome screen
-  if (localStorage.getItem('skipWelcome')) {
-    localStorage.removeItem('skipWelcome');
-    entrarNoSite();
-  }
   verificarLogin();
 });
 </script>
