@@ -20,12 +20,10 @@ function registrarEstatistica(comercioId, tipo) {
 
 // ===== STORAGE KEYS =====
 const KEYS = {
-  USERS: 'bes_usuarios',
   SESSION: 'bes_sessao',
   CART: 'bes_carrinho',
   ORDERS: 'bes_pedidos',
   FAVORITES: 'bes_favoritos',
-  MERCHANTS: 'bes_lojistas',
   API_TOKEN: 'bes_api_token'
 };
 
@@ -61,8 +59,6 @@ function escapeHTML(str) {
 
 // ===== AUTH MODULE =====
 const Auth = {
-  getUsers() { return storageGet(KEYS.USERS) || []; },
-
   getSession() { return storageGet(KEYS.SESSION); },
 
   getToken() { return storageGet(KEYS.API_TOKEN); },
@@ -72,9 +68,7 @@ const Auth = {
   getUser() {
     const session = this.getSession();
     if (!session) return null;
-    // Se logado via API, a session já tem os dados do user
-    if (session.fromApi) return session;
-    return this.getUsers().find(u => u.id === session.userId) || null;
+    return session;
   },
 
   async register(nome, email, tel, senha, tipo, dadosLoja) {
@@ -104,30 +98,11 @@ const Auth = {
         });
         return { ok: true, user: data.user };
       } catch (err) {
-        console.warn('[Auth] API register falhou, usando localStorage:', err.message);
+        console.warn('[Auth] API register falhou:', err.message);
       }
     }
 
-    // Fallback localStorage
-    const users = this.getUsers();
-    if (users.some(u => u.email === email)) {
-      return { ok: false, msg: 'E-mail já cadastrado.' };
-    }
-    const user = {
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      nome, email, tel,
-      senhaHash: btoa(senha), // Ofuscação básica — não é criptografia real, mas evita exposição em texto puro
-      criadoEm: new Date().toISOString(),
-      tipo: tipo || 'usuario'
-    };
-    if (tipo === 'lojista' && dadosLoja) {
-      user.lojaNome = dadosLoja.nome || '';
-      user.lojaWhatsapp = dadosLoja.whatsapp || '';
-    }
-    users.push(user);
-    storageSet(KEYS.USERS, users);
-    storageSet(KEYS.SESSION, { userId: user.id, nome: user.nome, email: user.email });
-    return { ok: true, user };
+    return { ok: false, msg: 'Serviço indisponível. Verifique sua conexão e tente novamente.' };
   },
 
   async login(email, senha) {
@@ -153,16 +128,11 @@ const Auth = {
         });
         return { ok: true, user: data.user };
       } catch (err) {
-        console.warn('[Auth] API login falhou, usando localStorage:', err.message);
+        console.warn('[Auth] API login falhou:', err.message);
       }
     }
 
-    // Fallback localStorage
-    const users = this.getUsers();
-    const user = users.find(u => u.email === email && u.senhaHash === btoa(senha));
-    if (!user) return { ok: false, msg: 'E-mail ou senha incorretos.' };
-    storageSet(KEYS.SESSION, { userId: user.id, nome: user.nome, email: user.email });
-    return { ok: true, user };
+    return { ok: false, msg: 'Serviço indisponível. Verifique sua conexão e tente novamente.' };
   },
 
   logout() {

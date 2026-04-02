@@ -4,6 +4,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../lib/prisma');
+const sanitize = require('../lib/sanitize');
 
 // Validacao de email
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -30,12 +31,6 @@ function gerarToken(user) {
     secret,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d', algorithm: 'HS256' }
   );
-}
-
-// Sanitizar string - remover tags HTML
-function sanitize(str) {
-  if (!str || typeof str !== 'string') return str;
-  return str.replace(/[<>]/g, '').trim();
 }
 
 // Limpar CPF/CNPJ - manter apenas digitos

@@ -3,12 +3,7 @@
 // ===========================================
 const slugify = require('slugify');
 const prisma = require('../lib/prisma');
-
-// Sanitizacao de texto - remove tags HTML para prevenir XSS
-function sanitize(str) {
-  if (str === null || str === undefined) return str;
-  return String(str).replace(/[<>]/g, '');
-}
+const sanitize = require('../lib/sanitize');
 
 // Formatar comercio para resposta (converte JSON strings em arrays)
 function formatarComercio(c) {
