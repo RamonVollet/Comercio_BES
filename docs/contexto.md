@@ -64,21 +64,25 @@ comercio_bes/
 │   └── style.css           # Estilos globais
 ├── js/
 │   └── script.js           # Lógica principal (fetch, render, carrinho, auth)
+├── html/
+│   ├── login.html          # Página de login
+│   └── cadastro.html       # Página de cadastro
 ├── backend/
 │   ├── package.json        # Dependências do backend
 │   ├── .env                # Variáveis de ambiente (JWT_SECRET, etc.)
 │   ├── prisma/
-│   │   ├── schema.prisma   # Schema do banco (7 modelos)
+│   │   ├── schema.prisma   # Schema do banco (10 modelos)
 │   │   ├── seed.js         # Script de seed (importa data.json)
 │   │   └── dev.db          # SQLite de desenvolvimento
 │   └── src/
 │       ├── server.js       # Servidor Express (Helmet, CORS, rate-limit)
 │       ├── lib/
 │       │   └── prisma.js   # PrismaClient singleton
-│       ├── controllers/    # Lógica de negócio (auth, comercios, avaliacoes, etc.)
-│       ├── middleware/      # Auth JWT, error handler
-│       ├── routes/          # Rotas da API REST
-│       ├── admin/           # Painel administrativo (HTML/CSS/JS)
+│       ├── controllers/    # Lógica de negócio (auth, comercios, pedidos, pagamentos, etc.)
+│       ├── middleware/      # Auth JWT, upload, error handler
+│       ├── routes/          # auth, comercios, categorias, avaliacoes, pedidos, pagamentos, upload, estatisticas
+│       ├── admin/           # Painel do administrador (/admin — protegido por JWT)
+│       ├── painel/          # Painel do comerciante (/painel)
 │       └── uploads/         # Imagens enviadas via upload
 ├── docs/
 │   ├── contexto.md         # Este arquivo
@@ -90,7 +94,7 @@ comercio_bes/
 
 ## Modelo de Dados (Prisma Schema)
 
-O banco possui 7 modelos:
+O banco possui 10 modelos:
 
 | Modelo       | Descrição                              |
 | ------------ | -------------------------------------- |
@@ -101,6 +105,9 @@ O banco possui 7 modelos:
 | Promocao     | Promoções ativas por comércio          |
 | Avaliacao    | Avaliações com nota e comentário       |
 | Estatistica  | Eventos (visitas, cliques WhatsApp)    |
+| Pedido       | Pedidos com status e histórico         |
+| ItemPedido   | Itens de um pedido (snapshot de preço) |
+| Pagamento    | Pagamentos via Mercado Pago (PIX)      |
 
 Exemplo de comércio (via API):
 
@@ -135,11 +142,13 @@ Exemplo de comércio (via API):
 ## Fluxo do Usuário
 
 ```
-Welcome Screen → Explorar Comércios → Buscar/Filtrar → Ver Detalhes (modal)
-                                                          ↓
-                                          Escolher Produtos (se houver catálogo)
-                                                          ↓
-                                          Enviar Pedido → WhatsApp do Lojista
+Explorar Comércios → Buscar/Filtrar → Ver Detalhes (modal)
+                                              ↓
+                              Escolher Produtos (se houver catálogo)
+                                              ↓
+                              Enviar Pedido → WhatsApp do Lojista
+                                              ↓ (futuro)
+                              Pagamento PIX (Mercado Pago)
 ```
 
 ## Decisões Técnicas

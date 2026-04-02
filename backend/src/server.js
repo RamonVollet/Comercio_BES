@@ -87,37 +87,36 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // maximo 100 requisicoes por IP
-  message: { error: 'Muitas requisicoes. Tente novamente em 15 minutos.' }
-});
-app.use('/api/', limiter);
+// Rate limiting (desabilitado em testes para nao interferir com volume de requests)
+if (process.env.NODE_ENV !== 'test') {
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 100, // maximo 100 requisicoes por IP
+    message: { error: 'Muitas requisicoes. Tente novamente em 15 minutos.' }
+  });
+  app.use('/api/', limiter);
 
-// Rate limit mais restrito para auth
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: { error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' }
-});
-app.use('/api/auth/', authLimiter);
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    message: { error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' }
+  });
+  app.use('/api/auth/', authLimiter);
 
-// Rate limit para avaliacoes (prevenir spam)
-const avaliacoesLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 30,
-  message: { error: 'Muitas avaliacoes enviadas. Tente novamente em 15 minutos.' }
-});
-app.use('/api/avaliacoes/', avaliacoesLimiter);
+  const avaliacoesLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 30,
+    message: { error: 'Muitas avaliacoes enviadas. Tente novamente em 15 minutos.' }
+  });
+  app.use('/api/avaliacoes/', avaliacoesLimiter);
 
-// Rate limit para estatisticas (prevenir abuso)
-const statsLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minuto
-  max: 60,
-  message: { error: 'Muitos eventos registrados. Tente novamente em breve.' }
-});
-app.use('/api/estatisticas/registrar', statsLimiter);
+  const statsLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 60,
+    message: { error: 'Muitos eventos registrados. Tente novamente em breve.' }
+  });
+  app.use('/api/estatisticas/registrar', statsLimiter);
+}
 
 // Body parsing
 app.use(express.json({ limit: '100kb' }));
@@ -194,13 +193,15 @@ app.get('/api', (req, res) => {
 app.use(errorHandler);
 
 // --- Iniciar Servidor ---
-app.listen(PORT, () => {
-  console.log(`\n=== Comercio BES API ===`);
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
-  console.log(`API:    http://localhost:${PORT}/api`);
-  console.log(`Admin:  http://localhost:${PORT}/admin`);
-  console.log(`Env:    ${process.env.NODE_ENV || 'development'}`);
-  console.log(`========================\n`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`\n=== Comercio BES API ===`);
+    console.log(`Servidor rodando em http://localhost:${PORT}`);
+    console.log(`API:    http://localhost:${PORT}/api`);
+    console.log(`Admin:  http://localhost:${PORT}/admin`);
+    console.log(`Env:    ${process.env.NODE_ENV || 'development'}`);
+    console.log(`========================\n`);
+  });
+}
 
 module.exports = app;

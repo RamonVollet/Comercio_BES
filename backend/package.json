@@ -12,7 +12,9 @@
     "db:seed": "node src/seed.js",
     "db:studio": "npx prisma studio",
     "db:reset": "npx prisma db push --force-reset && node src/seed.js",
-    "setup": "npm install && npx prisma generate && npx prisma db push && node src/seed.js"
+    "setup": "npm install && npx prisma generate && npx prisma db push && node src/seed.js",
+    "test": "jest --runInBand --forceExit",
+    "test:watch": "jest --runInBand --watch"
   },
   "keywords": [
     "comercio",
@@ -38,7 +40,9 @@
     "slugify": "^1.6.6"
   },
   "devDependencies": {
+    "jest": "^29.7.0",
     "nodemon": "^3.1.9",
-    "prisma": "^6.4.1"
+    "prisma": "^6.4.1",
+    "supertest": "^7.0.0"
   }
 }
