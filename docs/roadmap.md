@@ -134,9 +134,11 @@ Auditoria completa de segurança com **43 vulnerabilidades identificadas e corri
 - [ ] **Sistema de cupons**
   - Código promocional por loja
   - "Primeira compra com desconto"
-- [ ] **Integração com pagamento** (longo prazo)
-  - PIX via API (Mercado Pago / Stripe)
-  - Opção: pagar online ou pagar na entrega
+- [x] **Integração com pagamento** (backend implementado — pendente testes e UI)
+  - PIX via Mercado Pago (`pagamentosController.js` + rota `/api/pagamentos`)
+  - Modelo `Pagamento` no banco com status e external_id
+  - [ ] Testar fluxo completo com sandbox Mercado Pago
+  - [ ] Integrar UI do frontend com checkout PIX
 - [ ] **Delivery tracking** (muito longo prazo)
   - Status do pedido em tempo real
   - Integração com motoboy

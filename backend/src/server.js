@@ -194,13 +194,15 @@ app.get('/api', (req, res) => {
 app.use(errorHandler);
 
 // --- Iniciar Servidor ---
-app.listen(PORT, () => {
-  console.log(`\n=== Comercio BES API ===`);
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
-  console.log(`API:    http://localhost:${PORT}/api`);
-  console.log(`Admin:  http://localhost:${PORT}/admin`);
-  console.log(`Env:    ${process.env.NODE_ENV || 'development'}`);
-  console.log(`========================\n`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`\n=== Comercio BES API ===`);
+    console.log(`Servidor rodando em http://localhost:${PORT}`);
+    console.log(`API:    http://localhost:${PORT}/api`);
+    console.log(`Admin:  http://localhost:${PORT}/admin`);
+    console.log(`Env:    ${process.env.NODE_ENV || 'development'}`);
+    console.log(`========================\n`);
+  });
+}
 
 module.exports = app;
