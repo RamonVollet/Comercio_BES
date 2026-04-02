@@ -2,12 +2,7 @@
 // Controller - Avaliacoes
 // ===========================================
 const prisma = require('../lib/prisma');
-
-// Sanitizacao de texto - remove tags HTML para prevenir XSS
-function sanitize(str) {
-  if (str === null || str === undefined) return str;
-  return String(str).replace(/[<>]/g, '');
-}
+const sanitize = require('../lib/sanitize');
 
 // GET /api/avaliacoes/:comercioSlug
 async function listarPorComercio(req, res, next) {

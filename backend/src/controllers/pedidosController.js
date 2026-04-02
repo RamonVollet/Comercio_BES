@@ -2,12 +2,7 @@
 // Controller - Pedidos (Orders)
 // ===========================================
 const prisma = require('../lib/prisma');
-
-// Sanitizar string
-function sanitize(str) {
-  if (!str || typeof str !== 'string') return str;
-  return str.replace(/[<>]/g, '').trim();
-}
+const sanitize = require('../lib/sanitize');
 
 // Gerar codigo do pedido: BES-00001
 async function gerarCodigo() {
