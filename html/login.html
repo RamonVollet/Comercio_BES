@@ -360,8 +360,9 @@
   <a href="cadastro.html" class="btn-cadastro">Não tem uma conta? <span>Cadastre aqui!</span></a>
 </div>
 
-<script src="../js/script.js"></script>
-<script>
+<script type="module">
+  import { Auth } from '../js/modules/auth.js';
+
   function entrar() {
     let ok = true;
 
@@ -403,6 +404,10 @@
     document.getElementById(campo).classList.remove('erro');
     document.getElementById(campo + '-erro').classList.remove('show');
   }
+
+  // Expor para inline handlers (onclick/oninput no HTML)
+  window.entrar = entrar;
+  window.limparErro = limparErro;
 
   document.addEventListener('DOMContentLoaded', () => {
     if (localStorage.getItem('bes_dark_mode') === '1') {

@@ -122,11 +122,11 @@ Auditoria completa de segurança com **43 vulnerabilidades identificadas e corri
 > Status: **Em andamento**
 
 - [x] **Carrinho persistente**
-  - Carrinho salvo em localStorage (módulo Cart em `script.js`)
+  - Carrinho salvo em localStorage (`js/modules/cart.js`)
   - Adicionar/remover itens, alterar quantidade
   - Pedido formatado e enviado via WhatsApp
 - [x] **Histórico de pedidos**
-  - Módulo Orders em `script.js` com localStorage
+  - Módulo Orders em `js/modules/orders.js` com localStorage
   - Usuário pode ver pedidos anteriores
 - [ ] **Notificações**
   - Push notifications para promoções
@@ -195,4 +195,17 @@ Auditoria completa de segurança com **43 vulnerabilidades identificadas e corri
 
 ---
 
-*Última atualização: Março 2026*
+---
+
+## Fase 4.5 — Refatoração Técnica ✅
+
+> Status: **Concluído** (Abril 2026)
+
+- [x] **Modularização do frontend** — `script.js` (1.561 linhas) extraído em 20 módulos
+- [x] **Migração para ES Modules** — `type="module"` + `app.js` como entry point único
+- [x] **Estado compartilhado** — `js/modules/state.js` centraliza estado mutable
+- [x] **Service Worker atualizado** — cache `v3` com lista de todos os módulos
+
+---
+
+*Última atualização: Abril 2026*

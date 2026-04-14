@@ -1,9 +1,8 @@
 // ===== COMÉRCIO BES — UTILITÁRIOS =====
 // Funções puras: sem DOM, sem estado, sem fetch.
-// Depende apenas de: config.js (KEYS)
 
 // ===== SEGURANÇA: Escape HTML para prevenir XSS =====
-function escapeHTML(str) {
+export function escapeHTML(str) {
   if (str === null || str === undefined) return '';
   return String(str)
     .replace(/&/g, '&amp;')
@@ -14,16 +13,16 @@ function escapeHTML(str) {
 }
 
 // ===== STORAGE =====
-function storageGet(key) {
+export function storageGet(key) {
   try { return JSON.parse(localStorage.getItem(key)) || null; } catch { return null; }
 }
 
-function storageSet(key, val) {
+export function storageSet(key, val) {
   localStorage.setItem(key, JSON.stringify(val));
 }
 
 // ===== STRINGS =====
-function gerarSlug(nome) {
+export function gerarSlug(nome) {
   return nome
     .toLowerCase()
     .normalize('NFD')
@@ -33,22 +32,12 @@ function gerarSlug(nome) {
 }
 
 // ===== FORMATAÇÃO =====
-
-/**
- * Formata valor numérico como moeda brasileira.
- * Ex: 1234.5 → "1.234,50"
- */
-function formatCurrency(value) {
+export function formatCurrency(value) {
   return Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 // ===== UI HELPERS =====
-
-/**
- * Gera HTML de estrelas para um rating (0–5).
- * Retorna string HTML — não manipula DOM.
- */
-function gerarStars(rating) {
+export function gerarStars(rating) {
   let html = '';
   for (let i = 1; i <= 5; i++) {
     html += i <= Math.round(rating)

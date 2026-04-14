@@ -63,7 +63,29 @@ comercio_bes/
 ├── css/
 │   └── style.css           # Estilos globais
 ├── js/
-│   └── script.js           # Lógica principal (fetch, render, carrinho, auth)
+│   ├── app.js              # Entry point — ES module, imports tudo, expõe window.*
+│   ├── config.js           # Constantes (API_BASE, KEYS, ITEMS_POR_PAGINA)
+│   ├── modules/
+│   │   ├── state.js        # Estado compartilhado (comercios, paginaAtual, etc.)
+│   │   ├── api.js          # Fetch calls (carregarComercios, registrarEstatistica, etc.)
+│   │   ├── auth.js         # Objeto Auth (login, register, logout, getToken)
+│   │   ├── auth-ui.js      # UI de auth (drawer login/cadastro)
+│   │   ├── cart.js         # Objeto Cart + drawer de carrinho
+│   │   ├── checkout.js     # Fluxo de checkout (WhatsApp + pedido backend)
+│   │   ├── favorites.js    # Objeto Favorites (toggle, isFav)
+│   │   ├── map.js          # Leaflet + OpenStreetMap
+│   │   ├── merchant-ui.js  # UI de cadastro de loja
+│   │   ├── merchants.js    # Lojas locais (localStorage)
+│   │   ├── orders.js       # Objeto Orders (localStorage)
+│   │   ├── search.js       # Busca, filtro e ordenação
+│   │   ├── theme.js        # Dark mode
+│   │   └── ui.js           # Toasts, skeleton, lazy load, PWA install
+│   └── render/
+│       ├── cards.js        # criarCard, renderizarCards, paginação
+│       ├── favorites.js    # renderFavoritos, abrirFavoritos
+│       ├── modal.js        # abrirModal, catálogo, avaliação
+│       ├── orders-ui.js    # drawer de pedidos
+│       └── promotions.js   # renderPromos, renderRanking
 ├── html/
 │   ├── login.html          # Página de login
 │   └── cadastro.html       # Página de cadastro
@@ -88,7 +110,8 @@ comercio_bes/
 │   ├── contexto.md         # Este arquivo
 │   ├── roadmap.md          # Plano de evolução
 │   ├── security-audit.md   # Relatório da auditoria de segurança
-│   └── skills.md           # Skills técnicas necessárias
+│   ├── skills.md           # Skills técnicas necessárias
+│   └── modularizacao.md    # Registro do processo de modularização do JS
 └── README.md               # Documentação do projeto
 ```
 
@@ -153,7 +176,7 @@ Explorar Comércios → Buscar/Filtrar → Ver Detalhes (modal)
 
 ## Decisões Técnicas
 
-1. **Vanilla JS** — Mantido por simplicidade; migração para React planejada para Fase 5+
+1. **Vanilla JS com ES Modules** — Migrado para `type="module"` em Abril/2026; `app.js` como entry point único com grafo de dependências explícito. Migração para React planejada para Fase 5+
 2. **API REST + fallback JSON** — Frontend busca da API com fallback para `data.json` (funciona offline)
 3. **Prisma ORM** — Abstração do banco, fácil trocar SQLite (dev) por PostgreSQL/MySQL (prod)
 4. **Deep linking via query string** — Permite compartilhar links de lojas sem roteador SPA

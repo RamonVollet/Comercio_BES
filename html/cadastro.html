@@ -482,8 +482,9 @@
   <p class="login-link">Já tem uma conta? <a href="login.html">Entrar aqui</a></p>
 </div>
 
-<script src="../js/script.js"></script>
-<script>
+<script type="module">
+  import { Auth } from '../js/modules/auth.js';
+
   let tipoAtivo = 'cliente';
 
   function selecionarTipo(tipo) {
@@ -573,6 +574,13 @@
       mostrarErro('l-email', 'Erro: ' + err.message);
     });
   }
+
+  // Expor para inline handlers (onclick/oninput no HTML)
+  window.selecionarTipo = selecionarTipo;
+  window.mascararTel = mascararTel;
+  window.limparErro = limparErro;
+  window.cadastrarCliente = cadastrarCliente;
+  window.cadastrarLojista = cadastrarLojista;
 
   document.addEventListener('DOMContentLoaded', () => {
     if (localStorage.getItem('bes_dark_mode') === '1') {

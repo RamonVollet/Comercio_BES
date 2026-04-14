@@ -1,12 +1,31 @@
 // ===== SERVICE WORKER — Comércio BES =====
-const CACHE_NAME = 'comercio-bes-v2';
+const CACHE_NAME = 'comercio-bes-v3';
 const OFFLINE_ASSETS = [
   './',
   './index.html',
   './css/style.css',
+  './js/app.js',
   './js/config.js',
+  './js/modules/state.js',
   './js/modules/utils.js',
-  './js/script.js',
+  './js/modules/api.js',
+  './js/modules/auth.js',
+  './js/modules/cart.js',
+  './js/modules/favorites.js',
+  './js/modules/orders.js',
+  './js/modules/merchants.js',
+  './js/modules/theme.js',
+  './js/modules/ui.js',
+  './js/modules/map.js',
+  './js/modules/search.js',
+  './js/modules/auth-ui.js',
+  './js/modules/checkout.js',
+  './js/modules/merchant-ui.js',
+  './js/render/promotions.js',
+  './js/render/cards.js',
+  './js/render/favorites.js',
+  './js/render/orders-ui.js',
+  './js/render/modal.js',
   './data/data.json',
   './manifest.json',
   'https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap'
