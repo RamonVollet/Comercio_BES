@@ -28,7 +28,8 @@ import {
 import {
   abrirModal, fecharModal,
   alterarQtdModal, adicionarAoCarrinho, enviarPedidoWhatsApp,
-  avaliar, enviarAvaliacao
+  avaliar, enviarAvaliacao,
+  abrirLightbox, fecharLightbox, navLightbox
 } from './render/modal.js';
 import {
   abrirAuth, fecharAuth, trocarAuthTab,
@@ -73,6 +74,9 @@ Object.assign(window, {
   alterarQtdModal, adicionarAoCarrinho, enviarPedidoWhatsApp,
   avaliar, enviarAvaliacao,
   copiarLinkLoja,  // definida abaixo neste arquivo
+
+  // Lightbox de fotos
+  abrirLightbox, fecharLightbox, navLightbox,
 
   // Carrinho / checkout
   cartUpdateQtd, cartRemove,

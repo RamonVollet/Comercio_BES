@@ -9,10 +9,13 @@ import { Favorites } from '../modules/favorites.js';
 import { mostrarToast } from '../modules/ui.js';
 import { abrirCheckout } from '../modules/checkout.js';
 import { state } from '../modules/state.js';
+import { GOOGLE_MAPS_KEY } from '../config.js';
 
 // ===== STATE LOCAL =====
 let avaliacao = 0;
 let carrinhoModal = {};
+let lightboxFotos = [];
+let lightboxIdx = 0;
 
 // ===== ABERTURA / FECHAMENTO =====
 
@@ -49,9 +52,31 @@ export function abrirModal(id) {
     '<span class="modal-rating-big">' + escapeHTML(String(c.rating)) + '</span>' +
     '<span style="font-size:14px;color:#aaa;margin-left:8px;">(' + parseInt(c.visitas) + ' avaliações)</span>';
 
-  document.getElementById('modal-fotos').innerHTML = c.fotos.map(f =>
-    '<div class="foto-thumb">' + escapeHTML(f) + '</div>'
-  ).join('');
+  // Fotos — detecta URL real vs emoji placeholder
+  lightboxFotos = (c.fotos || []).filter(f => f.startsWith('http') || f.startsWith('/'));
+  document.getElementById('modal-fotos').innerHTML = (c.fotos || []).map((f, idx) => {
+    const isUrl = f.startsWith('http') || f.startsWith('/');
+    return '<div class="foto-thumb" ' + (isUrl ? 'onclick="abrirLightbox(' + idx + ')"' : '') + '>' +
+      (isUrl
+        ? '<img src="' + escapeHTML(f) + '" alt="Foto ' + (idx + 1) + '" loading="lazy">'
+        : '<span class="foto-emoji">' + escapeHTML(f) + '</span>'
+      ) +
+    '</div>';
+  }).join('');
+
+  // Mapa embed — Google Maps (se tiver key) ou OpenStreetMap (gratuito)
+  const mapaEl = document.getElementById('modal-mapa');
+  if (c.lat && c.lng) {
+    const embedSrc = GOOGLE_MAPS_KEY
+      ? 'https://www.google.com/maps/embed/v1/view?key=' + encodeURIComponent(GOOGLE_MAPS_KEY) + '&center=' + c.lat + ',' + c.lng + '&zoom=17'
+      : 'https://www.openstreetmap.org/export/embed.html?bbox=' + (c.lng - 0.003) + ',' + (c.lat - 0.003) + ',' + (c.lng + 0.003) + ',' + (c.lat + 0.003) + '&layer=mapnik&marker=' + c.lat + ',' + c.lng;
+    mapaEl.innerHTML =
+      '<div class="modal-mapa-wrap">' +
+        '<iframe src="' + embedSrc + '" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Localização da loja"></iframe>' +
+      '</div>';
+  } else {
+    mapaEl.innerHTML = '';
+  }
 
   const catalogoContainer = document.getElementById('modal-catalogo');
   if (c.catalogo && c.catalogo.length > 0) {
@@ -169,6 +194,32 @@ export function enviarPedidoWhatsApp() {
   fecharModal();
   abrirCheckout();
   mostrarToast('📋 Preencha seus dados e clique em "Enviar via WhatsApp".');
+}
+
+// ===== LIGHTBOX =====
+
+export function abrirLightbox(idx) {
+  if (!lightboxFotos.length) return;
+  lightboxIdx = idx;
+  _renderLightbox();
+  document.getElementById('lightbox-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+export function fecharLightbox() {
+  document.getElementById('lightbox-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+export function navLightbox(dir) {
+  lightboxIdx = (lightboxIdx + dir + lightboxFotos.length) % lightboxFotos.length;
+  _renderLightbox();
+}
+
+function _renderLightbox() {
+  document.getElementById('lightbox-img').src = lightboxFotos[lightboxIdx];
+  document.getElementById('lightbox-counter').textContent =
+    (lightboxIdx + 1) + ' / ' + lightboxFotos.length;
 }
 
 // ===== AVALIAÇÃO =====

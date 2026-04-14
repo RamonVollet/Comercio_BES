@@ -18,3 +18,9 @@ export const KEYS = {
 
 // ===== PAGINAÇÃO =====
 export const ITEMS_POR_PAGINA = 8;
+
+// ===== GOOGLE MAPS =====
+// Obtenha sua chave em: https://console.cloud.google.com → APIs → Maps Embed API
+// Restrinja a chave pelo domínio do site nas configurações da API.
+// Deixe vazio para usar OpenStreetMap (gratuito, sem chave).
+export const GOOGLE_MAPS_KEY = '';

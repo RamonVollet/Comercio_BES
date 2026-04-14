@@ -62,6 +62,8 @@ comercio_bes/
 │   └── data.json           # Base de dados estática (fallback)
 ├── css/
 │   └── style.css           # Estilos globais
+├── images/
+│   └── lojas/              # Fotos das lojas (slug-da-loja/foto1.jpg...)
 ├── js/
 │   ├── app.js              # Entry point — ES module, imports tudo, expõe window.*
 │   ├── config.js           # Constantes (API_BASE, KEYS, ITEMS_POR_PAGINA)
@@ -111,7 +113,8 @@ comercio_bes/
 │   ├── roadmap.md          # Plano de evolução
 │   ├── security-audit.md   # Relatório da auditoria de segurança
 │   ├── skills.md           # Skills técnicas necessárias
-│   └── modularizacao.md    # Registro do processo de modularização do JS
+│   ├── modularizacao.md    # Registro do processo de modularização do JS
+│   └── plano-cadastro.md   # Guia operacional de cadastro de lojas reais
 └── README.md               # Documentação do projeto
 ```
 

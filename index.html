@@ -457,6 +457,9 @@
 
       <div class="foto-galeria" id="modal-fotos"></div>
 
+      <!-- MAPA EMBED -->
+      <div id="modal-mapa"></div>
+
       <!-- CATÁLOGO / CARRINHO -->
       <div id="modal-catalogo"></div>
 
@@ -695,5 +698,15 @@ document.addEventListener('DOMContentLoaded', () => {
   verificarLogin();
 });
 </script>
+
+<!-- LIGHTBOX -->
+<div class="lightbox-overlay" id="lightbox-overlay" onclick="fecharLightbox()">
+  <button class="lightbox-close" onclick="fecharLightbox()">✕</button>
+  <button class="lightbox-nav lightbox-prev" onclick="event.stopPropagation();navLightbox(-1)">‹</button>
+  <img class="lightbox-img" id="lightbox-img" src="" alt="Foto da loja">
+  <button class="lightbox-nav lightbox-next" onclick="event.stopPropagation();navLightbox(1)">›</button>
+  <div class="lightbox-counter" id="lightbox-counter"></div>
+</div>
+
 </body>
 </html>
