@@ -1,12 +1,6 @@
 // ===== COMÉRCIO BES — SCRIPT PRINCIPAL =====
 // Arquitetura híbrida: API REST (backend) com fallback localStorage
-
-// ===== CONFIG =====
-const API_BASE = window.location.port === '3000'
-  ? window.location.origin + '/api'
-  : 'http://localhost:3000/api'; // Backend local
-
-let API_DISPONIVEL = false; // detectado automaticamente
+// Depende de: js/config.js, js/modules/utils.js
 
 // ===== API HELPER =====
 function registrarEstatistica(comercioId, tipo) {
@@ -18,15 +12,6 @@ function registrarEstatistica(comercioId, tipo) {
   }).catch(err => console.warn('[Stats] Falha ao registrar ' + tipo + ':', err.message));
 }
 
-// ===== STORAGE KEYS =====
-const KEYS = {
-  SESSION: 'bes_sessao',
-  CART: 'bes_carrinho',
-  ORDERS: 'bes_pedidos',
-  FAVORITES: 'bes_favoritos',
-  API_TOKEN: 'bes_api_token'
-};
-
 // ===== STATE =====
 let comercios = [];
 let categoriaAtiva = 'todos';
@@ -35,27 +20,7 @@ let avaliacao = 0;
 let carrinhoModal = {}; // carrinho temporário do modal (qtds por idx)
 let mapa = null;
 let paginaAtual = 1;
-const ITEMS_POR_PAGINA = 8;
 let deferredPrompt = null;
-
-// ===== STORAGE HELPERS =====
-function storageGet(key) {
-  try { return JSON.parse(localStorage.getItem(key)) || null; } catch { return null; }
-}
-function storageSet(key, val) {
-  localStorage.setItem(key, JSON.stringify(val));
-}
-
-// ===== SEGURANCA: Escape HTML para prevenir XSS =====
-function escapeHTML(str) {
-  if (str === null || str === undefined) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
 
 // ===== AUTH MODULE =====
 const Auth = {
@@ -342,15 +307,6 @@ function verificarDeepLink() {
   }
 }
 
-function gerarSlug(nome) {
-  return nome
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-}
-
 function copiarLinkLoja(slug) {
   const url = window.location.origin + window.location.pathname + '?loja=' + slug;
   // Registrar compartilhamento
@@ -460,14 +416,6 @@ function criarCard(c) {
       '</div>' +
     '</div>' +
   '</div>';
-}
-
-function gerarStars(r) {
-  let html = '';
-  for (let i = 1; i <= 5; i++) {
-    html += i <= Math.round(r) ? '<span class="star">★</span>' : '<span class="star-empty">★</span>';
-  }
-  return html;
 }
 
 function renderizarCards(lista) {
@@ -670,7 +618,7 @@ function abrirModal(id) {
             '<div class="catalogo-info">' +
               '<div class="catalogo-nome">' + escapeHTML(prod.nome_produto) + '</div>' +
               '<div class="catalogo-desc">' + escapeHTML(prod.descricao) + '</div>' +
-              '<div class="catalogo-preco">R$ ' + Number(prod.preco).toFixed(2).replace('.', ',') + '</div>' +
+              '<div class="catalogo-preco">R$ ' + formatCurrency(prod.preco) + '</div>' +
             '</div>' +
             '<div class="catalogo-qtd">' +
               '<button class="qtd-btn" onclick="alterarQtdModal(' + idx + ', -1)">−</button>' +
@@ -742,7 +690,7 @@ function atualizarResumoModal() {
 
   const total = itens.reduce((sum, i) => sum + (i.produto.preco * i.qtd), 0);
   resumoEl.style.display = 'block';
-  totalEl.innerHTML = '<strong>' + itens.length + ' ' + (itens.length === 1 ? 'item' : 'itens') + '</strong> · Total: <strong>R$ ' + total.toFixed(2).replace('.', ',') + '</strong>';
+  totalEl.innerHTML = '<strong>' + itens.length + ' ' + (itens.length === 1 ? 'item' : 'itens') + '</strong> · Total: <strong>R$ ' + formatCurrency(total) + '</strong>';
 }
 
 function adicionarAoCarrinho() {
@@ -818,7 +766,7 @@ function gerarLinkWhatsApp(loja, produtosSelecionados, cliente) {
   }
 
   texto += '=========================\n';
-  texto += 'Total: R$' + total.toFixed(2).replace('.', ',');
+  texto += 'Total: R$' + formatCurrency(total);
   return 'https://wa.me/' + encodeURIComponent(loja.whatsapp) + '?text=' + encodeURIComponent(texto);
 }
 
@@ -898,7 +846,7 @@ function renderCarrinhoDrawer() {
       html += '<div class="drawer-item">' +
         '<div class="drawer-item-info">' +
           '<div class="drawer-item-name">' + escapeHTML(item.produto.nome_produto) + '</div>' +
-          '<div class="drawer-item-price">R$ ' + Number(subtotal).toFixed(2).replace('.', ',') + '</div>' +
+          '<div class="drawer-item-price">R$ ' + formatCurrency(subtotal) + '</div>' +
         '</div>' +
         '<div class="drawer-item-controls">' +
           '<button class="qtd-btn-sm" onclick="cartUpdateQtd(' + parseInt(item.globalIdx) + ', -1)">−</button>' +
@@ -913,7 +861,7 @@ function renderCarrinhoDrawer() {
 
   body.innerHTML = html;
   footer.style.display = 'block';
-  document.getElementById('drawer-total').innerHTML = '<strong>Total: R$ ' + Cart.total().toFixed(2).replace('.', ',') + '</strong>';
+  document.getElementById('drawer-total').innerHTML = '<strong>Total: R$ ' + formatCurrency(Cart.total()) + '</strong>';
 }
 
 function cartUpdateQtd(idx, delta) {
@@ -968,11 +916,11 @@ function abrirCheckout() {
   cart.forEach(item => {
     html += '<div class="checkout-item">' +
       '<span>' + parseInt(item.qtd) + 'x ' + escapeHTML(item.produto.nome_produto) + '</span>' +
-      '<span>R$ ' + Number(item.produto.preco * item.qtd).toFixed(2).replace('.', ',') + '</span>' +
+      '<span>R$ ' + formatCurrency(item.produto.preco * item.qtd) + '</span>' +
     '</div>';
   });
   document.getElementById('checkout-items').innerHTML = html;
-  document.getElementById('checkout-total').innerHTML = '<strong>Total: R$ ' + Cart.total().toFixed(2).replace('.', ',') + '</strong>';
+  document.getElementById('checkout-total').innerHTML = '<strong>Total: R$ ' + formatCurrency(Cart.total()) + '</strong>';
 
   document.getElementById('checkout-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -1303,7 +1251,7 @@ function abrirPedidos() {
         '<div class="order-items">' +
           o.items.map(i => '<div>' + parseInt(i.qtd) + 'x ' + escapeHTML(i.produto.nome_produto) + ' <span style="color:#aaa">(' + escapeHTML(i.lojaNome) + ')</span></div>').join('') +
         '</div>' +
-        '<div class="order-total">Total: R$ ' + Number(o.total).toFixed(2).replace('.', ',') + '</div>' +
+        '<div class="order-total">Total: R$ ' + formatCurrency(o.total) + '</div>' +
         '<div class="order-payment">Pagamento: ' + escapeHTML(o.pagamento) + '</div>' +
       '</div>';
     }).join('');
