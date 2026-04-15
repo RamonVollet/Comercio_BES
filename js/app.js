@@ -146,7 +146,9 @@ async function inicializar() {
 
 function renderTudo() {
   state.paginaAtual = 1;
-  renderizarCards(state.comercios);
+  // Destaques primeiro, depois ordem original
+  const ordenados = [...state.comercios].sort((a, b) => (b.destaque ? 1 : 0) - (a.destaque ? 1 : 0));
+  renderizarCards(ordenados);
   renderPromos();
   renderRanking('rating');
   renderMapa();

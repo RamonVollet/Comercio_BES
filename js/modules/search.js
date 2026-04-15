@@ -7,9 +7,16 @@ import { renderRanking } from '../render/promotions.js';
 
 // ===== FILTROS PUROS =====
 
+// Destaques sempre primeiro, depois mantém a ordem original
+function comDestaquesPrimeiro(lista) {
+  return [...lista].sort((a, b) => (b.destaque ? 1 : 0) - (a.destaque ? 1 : 0));
+}
+
 export function filtrarPorCategoria(cat) {
-  if (cat === 'todos') return state.comercios;
-  return state.comercios.filter(c => c.categoria === cat || c.tags.includes(cat));
+  const base = cat === 'todos'
+    ? state.comercios
+    : state.comercios.filter(c => c.categoria === cat || c.tags.includes(cat));
+  return comDestaquesPrimeiro(base);
 }
 
 export function buscarPorTermo(termo) {
@@ -71,9 +78,9 @@ export function filtrarCategoria(cat, el) {
 
 export function ordenar(tipo) {
   let lista = filtrarPorCategoria(state.categoriaAtiva);
-  if (tipo === 'rating') lista.sort((a, b) => b.rating - a.rating);
-  if (tipo === 'nome') lista.sort((a, b) => a.nome.localeCompare(b.nome));
-  if (tipo === 'visitas') lista.sort((a, b) => b.visitas - a.visitas);
+  if (tipo === 'rating') lista.sort((a, b) => (b.destaque ? 1 : 0) - (a.destaque ? 1 : 0) || b.rating - a.rating);
+  if (tipo === 'nome') lista.sort((a, b) => (b.destaque ? 1 : 0) - (a.destaque ? 1 : 0) || a.nome.localeCompare(b.nome));
+  if (tipo === 'visitas') lista.sort((a, b) => (b.destaque ? 1 : 0) - (a.destaque ? 1 : 0) || b.visitas - a.visitas);
   state.paginaAtual = 1;
   renderizarCards(lista);
 }

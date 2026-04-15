@@ -696,6 +696,12 @@ function toggleContaMenu() {
 
 document.addEventListener('DOMContentLoaded', () => {
   verificarLogin();
+  if (localStorage.getItem('bes_cart_pending') === '1' && Auth.isLoggedIn()) {
+    localStorage.removeItem('bes_cart_pending');
+    const user = Auth.getUser();
+    const nome = user ? ' ' + user.nome.split(' ')[0] : '';
+    setTimeout(() => mostrarToast('Bem-vindo(a)' + nome + '! Agora você pode adicionar itens ao carrinho.'), 600);
+  }
 });
 </script>
 

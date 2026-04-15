@@ -209,6 +209,10 @@
     color: #f3f3f3;
   }
 
+  body.dark-mode .card-fav { color: #555; }
+  body.dark-mode .card-fav:hover { color: #FF6D00; }
+  body.dark-mode .card-fav.active { color: #FF6D00; }
+
   body.dark-mode .store-addr,
   body.dark-mode .store-reviews {
     color: #a0a0a0;
@@ -1088,12 +1092,19 @@
   .store-img {
     height: 200px;
     background: var(--cinza);
+    background-size: cover;
+    background-position: center;
     position: relative;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 60px;
+    transition: background-position 0.4s ease;
+  }
+
+  .store-card:hover .store-img {
+    background-position: center 40%;
   }
 
   .store-img img {
@@ -1150,6 +1161,28 @@
     color: #fff;
   }
 
+  .store-destaque {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #FF6D00;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 100px;
+  }
+
+  .store-card-destaque {
+    border: 2px solid #FF6D00;
+    box-shadow: 0 4px 24px rgba(255, 109, 0, 0.15);
+  }
+
+  body.dark-mode .store-card-destaque {
+    border-color: #FF6D00;
+    box-shadow: 0 4px 24px rgba(255, 109, 0, 0.25);
+  }
+
   .store-body {
     padding: 20px;
   }
@@ -1163,12 +1196,35 @@
     margin-bottom: 6px;
   }
 
+  .store-name-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
   .store-name {
     font-family: 'Poppins', sans-serif;
     font-size: 20px;
     font-weight: 700;
-    margin-bottom: 8px;
   }
+
+  .card-fav {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    color: #ccc;
+    padding: 0;
+    line-height: 1;
+    margin-top: 3px;
+    transition: color 0.2s, transform 0.15s;
+  }
+
+  .card-fav:hover { color: #FF6D00; transform: scale(1.2); }
+  .card-fav.active { color: #FF6D00; }
 
   .store-addr {
     font-size: 13px;
@@ -1222,15 +1278,34 @@
 
   .btn-whats:hover { background: #128C7E; transform: scale(1.02); }
 
+  .btn-catalogo {
+    background: var(--cinza);
+    color: var(--texto);
+    border: 1.5px solid var(--borda);
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-catalogo:hover { border-color: var(--verde); color: var(--verde); background: rgba(0,200,83,0.06); }
+
   .btn-perfil {
     background: var(--cinza);
-    border: none;
+    border: 1.5px solid var(--borda);
     padding: 12px 16px;
     border-radius: 12px;
-    font-size: 16px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
     color: var(--texto);
+    white-space: nowrap;
   }
 
   .btn-perfil:hover { background: var(--borda); }
@@ -1486,11 +1561,26 @@
   .modal-img {
     height: 220px;
     background: var(--cinza);
+    background-size: cover;
+    background-position: center;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 80px;
+  }
+
+  .modal-img.has-photo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, transparent 55%);
+    pointer-events: none;
+  }
+
+  .modal-img.has-photo .modal-close,
+  .modal-img.has-photo .modal-fav {
+    z-index: 1;
   }
 
   .modal-close {
@@ -1616,6 +1706,129 @@
   }
 
   .btn-maps:hover { background: var(--borda); }
+
+  .btn-compartilhar {
+    background: transparent;
+    color: var(--texto);
+    border: 1.5px solid var(--borda);
+    padding: 14px;
+    border-radius: 14px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+  }
+
+  .btn-compartilhar:hover { background: var(--borda); }
+
+  .carrinho-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .btn-add-cart {
+    flex: 1;
+    background: var(--verde);
+    color: #000;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-add-cart:hover { background: var(--verde-escuro); color: #fff; }
+
+  .btn-enviar-pedido {
+    flex: 1;
+    background: #25D366;
+    color: #fff;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-enviar-pedido:hover { background: #128C7E; }
+
+  /* ===== AUTH GATE NO MODAL ===== */
+  .auth-gate-modal {
+    margin-top: 20px;
+    background: var(--cinza);
+    border: 1.5px solid var(--borda);
+    border-radius: 16px;
+    padding: 28px 20px 24px;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+
+  .auth-gate-modal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .auth-gate-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--texto);
+    margin-bottom: 6px;
+  }
+
+  .auth-gate-sub {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 20px;
+  }
+
+  .auth-gate-btn-create {
+    display: block;
+    background: var(--verde);
+    color: #000;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 14px;
+    border-radius: 12px;
+    text-decoration: none;
+    margin-bottom: 12px;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  .auth-gate-btn-create:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 20px rgba(0,200,83,0.3);
+  }
+
+  .auth-gate-btn-login {
+    display: block;
+    font-size: 13px;
+    color: var(--verde-escuro);
+    text-decoration: none;
+    padding: 6px;
+  }
+
+  .auth-gate-btn-login:hover { text-decoration: underline; }
+
+  body.dark-mode .auth-gate-modal {
+    background: #1a1a1a;
+    border-color: #2a2a2a;
+  }
+
+  body.dark-mode .auth-gate-sub { color: #666; }
+  body.dark-mode .auth-gate-btn-login { color: var(--verde); }
 
   /* ===== FOTO GALERIA ===== */
   .foto-galeria {
@@ -2581,14 +2794,44 @@
     display: flex;
     gap: 8px;
     justify-content: center;
+    align-items: center;
     margin-top: 32px;
     flex-wrap: wrap;
   }
 
+  /* Botões Anterior / Próxima */
   .page-btn {
-    width: 40px; height: 40px;
+    height: 40px;
+    padding: 0 18px;
     border: 1.5px solid var(--borda);
-    background: #fff;
+    background: var(--cinza);
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+    color: var(--texto);
+    white-space: nowrap;
+  }
+
+  .page-btn:hover:not(:disabled) {
+    background: var(--escuro);
+    border-color: var(--escuro);
+    color: #fff;
+  }
+
+  .page-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  /* Números de página */
+  .page-num {
+    width: 40px;
+    height: 40px;
+    border: 1.5px solid var(--borda);
+    background: var(--cinza);
     border-radius: 10px;
     cursor: pointer;
     font-family: 'Poppins', sans-serif;
@@ -2598,20 +2841,22 @@
     color: var(--texto);
   }
 
-  .page-btn:hover, .page-btn.active {
+  .page-num:hover, .page-num.active {
     background: var(--escuro);
     border-color: var(--escuro);
     color: #fff;
   }
 
-  body.dark-mode .page-btn {
+  body.dark-mode .page-btn,
+  body.dark-mode .page-num {
     background: #1a1a1a;
     border-color: #333;
     color: #e0e0e0;
   }
 
-  body.dark-mode .page-btn:hover,
-  body.dark-mode .page-btn.active {
+  body.dark-mode .page-btn:hover:not(:disabled),
+  body.dark-mode .page-num:hover,
+  body.dark-mode .page-num.active {
     background: var(--verde);
     border-color: var(--verde);
     color: #000;

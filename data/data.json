@@ -545,6 +545,59 @@
       ],
       "promo": null,
       "catalogo": null
+    },
+    {
+      "id": 16,
+      "slug": "aquaflora-groshop",
+      "nome": "AquaFlora AgroShop",
+      "categoria": "Pet",
+      "tags": ["pet", "rações", "agro", "campo", "pesca", "lazer", "plantas", "jardim", "aquário", "animais"],
+      "emoji": "🌿",
+      "rating": 4.8,
+      "visitas": 20,
+      "recomendados": 20,
+      "aberto": true,
+      "destaque": true,
+      "endereco": "R. Ten. Penha, 1076",
+      "lat": -21.998827015702744,
+      "lng": -48.39176912705583,
+      "tel": "16999611708",
+      "whatsapp": "5516999611708",
+      "horario": "Seg-Sex 7h30–18h30 · Qua até 19h30 · Sáb 7h30–16h · Dom fechado",
+      "fotos": [
+        "/images/lojas/aquaflora/fachada.jpg",
+        "/images/lojas/aquaflora/foto1.jpg",
+        "/images/lojas/aquaflora/foto2.jpg",
+        "/images/lojas/aquaflora/foto3.jpg"
+      ],
+      "promo": {
+        "ativo": true,
+        "desc": "Toda quarta: até 15% off em rações selecionadas",
+        "preco": "até -15%",
+        "original": ""
+      },
+      "catalogo": [
+        {
+          "nome_produto": "Special Dog Raça Pequena Ultralife Sênior 15Kg",
+          "descricao": "Ração premium para cães de raça pequena sênior",
+          "preco": 185.16
+        },
+        {
+          "nome_produto": "Special Dog Raça Pequena Ultralife Suíno Frango 3Kg",
+          "descricao": "Ração sabor suíno e frango para raças pequenas",
+          "preco": 61.75
+        },
+        {
+          "nome_produto": "Special Dog Raça Pequena Ultralife 10Kg",
+          "descricao": "Ração premium para cães de raça pequena",
+          "preco": 126.26
+        },
+        {
+          "nome_produto": "Special Dog Raça Pequena Carne 20Kg",
+          "descricao": "Ração sabor carne para raças pequenas — embalagem família",
+          "preco": 170.91
+        }
+      ]
     }
   ]
 }

@@ -29,7 +29,19 @@ export function abrirModal(id) {
 
   registrarEstatistica(c.id, 'visita');
 
-  document.getElementById('modal-emoji').textContent = c.emoji;
+  // Hero foto ou emoji no cabeçalho
+  const modalImgEl = document.getElementById('modal-img');
+  const heroFoto = (c.fotos || []).find(f => f.startsWith('http') || f.startsWith('/'));
+  if (heroFoto) {
+    modalImgEl.style.backgroundImage = 'url(' + heroFoto + ')';
+    modalImgEl.classList.add('has-photo');
+    document.getElementById('modal-emoji').style.display = 'none';
+  } else {
+    modalImgEl.style.backgroundImage = '';
+    modalImgEl.classList.remove('has-photo');
+    document.getElementById('modal-emoji').style.display = '';
+    document.getElementById('modal-emoji').textContent = c.emoji;
+  }
   document.getElementById('modal-cat').textContent = c.categoria.toUpperCase();
   document.getElementById('modal-name').textContent = c.nome;
 
@@ -83,19 +95,19 @@ export function abrirModal(id) {
     catalogoContainer.style.display = 'block';
     catalogoContainer.innerHTML =
       '<hr class="modal-divider">' +
-      '<p style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:17px;margin-bottom:16px;">📋 Cardápio / Produtos</p>' +
+      '<p style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:17px;margin-bottom:16px;">Cardápio / Produtos</p>' +
       '<div class="catalogo-lista">' +
         c.catalogo.map((prod, idx) =>
           '<div class="catalogo-item">' +
-            '<div class="catalogo-info">' +
-              '<div class="catalogo-nome">' + escapeHTML(prod.nome_produto) + '</div>' +
-              '<div class="catalogo-desc">' + escapeHTML(prod.descricao) + '</div>' +
-              '<div class="catalogo-preco">R$ ' + formatCurrency(prod.preco) + '</div>' +
+            '<div class="catalogo-item-info">' +
+              '<div class="catalogo-item-name">' + escapeHTML(prod.nome_produto) + '</div>' +
+              '<div class="catalogo-item-desc">' + escapeHTML(prod.descricao) + '</div>' +
+              '<div class="catalogo-item-price">R$ ' + formatCurrency(prod.preco) + '</div>' +
             '</div>' +
-            '<div class="catalogo-qtd">' +
-              '<button class="qtd-btn" onclick="alterarQtdModal(' + idx + ',-1)">−</button>' +
-              '<span class="qtd-valor" id="qtd-' + idx + '">0</span>' +
-              '<button class="qtd-btn" onclick="alterarQtdModal(' + idx + ',1)">+</button>' +
+            '<div class="catalogo-qty">' +
+              '<button onclick="alterarQtdModal(' + idx + ',-1)">−</button>' +
+              '<span id="qtd-' + idx + '">0</span>' +
+              '<button onclick="alterarQtdModal(' + idx + ',1)">+</button>' +
             '</div>' +
           '</div>'
         ).join('') +
@@ -103,8 +115,8 @@ export function abrirModal(id) {
       '<div class="carrinho-resumo" id="carrinho-resumo" style="display:none;">' +
         '<div class="carrinho-total" id="carrinho-total"></div>' +
         '<div class="carrinho-actions">' +
-          '<button class="btn-add-cart" onclick="adicionarAoCarrinho()">🛒 Adicionar ao Carrinho</button>' +
-          '<button class="btn-enviar-pedido" onclick="enviarPedidoWhatsApp()">💬 Enviar via WhatsApp</button>' +
+          '<button class="btn-add-cart" onclick="adicionarAoCarrinho()">Adicionar ao Carrinho</button>' +
+          '<button class="btn-enviar-pedido" onclick="enviarPedidoWhatsApp()">Enviar via WhatsApp</button>' +
         '</div>' +
       '</div>';
   } else {
@@ -113,9 +125,9 @@ export function abrirModal(id) {
   }
 
   document.getElementById('modal-actions').innerHTML =
-    '<a class="btn-whats-big" href="https://wa.me/' + encodeURIComponent(c.whatsapp) + '?text=' + encodeURIComponent('Olá! Encontrei seu comércio no Comércio BES. Gostaria de mais informações!') + '" target="_blank" rel="noopener noreferrer" onclick="registrarEstatistica(' + parseInt(c.id) + ',\'whatsapp_click\')">💬 Falar no WhatsApp</a>' +
-    '<a class="btn-maps" href="https://www.openstreetmap.org/?mlat=' + encodeURIComponent(c.lat) + '&mlon=' + encodeURIComponent(c.lng) + '&zoom=17" target="_blank" rel="noopener noreferrer">🗺️ Ver no Mapa</a>' +
-    '<button class="btn-compartilhar" onclick="copiarLinkLoja(\'' + escapeHTML(c.slug) + '\')">🔗 Compartilhar Loja</button>';
+    '<a class="btn-whats-big" href="https://wa.me/' + encodeURIComponent(c.whatsapp) + '?text=' + encodeURIComponent('Olá! Encontrei seu comércio no Comércio BES. Gostaria de mais informações!') + '" target="_blank" rel="noopener noreferrer" onclick="registrarEstatistica(' + parseInt(c.id) + ',\'whatsapp_click\')">Falar no WhatsApp</a>' +
+    '<a class="btn-maps" href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(c.lat + ',' + c.lng) + '" target="_blank" rel="noopener noreferrer">Ver no Mapa</a>' +
+    '<button class="btn-compartilhar" onclick="copiarLinkLoja(\'' + escapeHTML(c.slug) + '\')">Compartilhar Loja</button>';
 
   document.getElementById('modal-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -153,8 +165,29 @@ function atualizarResumoModal() {
   totalEl.innerHTML = '<strong>' + itens.length + ' ' + (itens.length === 1 ? 'item' : 'itens') + '</strong> · Total: <strong>R$ ' + formatCurrency(total) + '</strong>';
 }
 
+function mostrarAuthGateModal() {
+  const container = document.getElementById('modal-catalogo');
+  if (!container) return;
+  const existing = document.getElementById('auth-gate-modal');
+  if (existing) { existing.classList.add('visible'); existing.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); return; }
+
+  const gate = document.createElement('div');
+  gate.id = 'auth-gate-modal';
+  gate.className = 'auth-gate-modal';
+  gate.innerHTML =
+    '<p class="auth-gate-title">Faça login para fazer pedidos</p>' +
+    '<p class="auth-gate-sub">Crie sua conta gratuita em menos de 1 minuto</p>' +
+    '<a href="html/cadastro.html" class="auth-gate-btn-create" onclick="localStorage.setItem(\'bes_cart_pending\',\'1\')">Criar conta gratuita</a>' +
+    '<a href="html/login.html" class="auth-gate-btn-login" onclick="localStorage.setItem(\'bes_cart_pending\',\'1\')">Já tenho conta · Entrar</a>';
+  container.appendChild(gate);
+  requestAnimationFrame(() => gate.classList.add('visible'));
+  gate.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
 export function adicionarAoCarrinho() {
   if (!state.comercioAtual || !state.comercioAtual.catalogo) return;
+  if (!Auth.isLoggedIn()) { mostrarAuthGateModal(); return; }
+
   const itens = Object.entries(carrinhoModal)
     .filter(([, qtd]) => qtd > 0)
     .map(([idx, qtd]) => ({ produto: state.comercioAtual.catalogo[parseInt(idx)], qtd }));
@@ -176,6 +209,8 @@ export function adicionarAoCarrinho() {
 
 export function enviarPedidoWhatsApp() {
   if (!state.comercioAtual || !state.comercioAtual.catalogo) return;
+  if (!Auth.isLoggedIn()) { mostrarAuthGateModal(); return; }
+
   const produtos = Object.entries(carrinhoModal)
     .filter(([, qtd]) => qtd > 0)
     .map(([idx, qtd]) => ({ produto: state.comercioAtual.catalogo[parseInt(idx)], qtd }));

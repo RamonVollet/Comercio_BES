@@ -178,7 +178,7 @@ Pasta das fotos: `images/lojas/aquaflora/`
 
 | Data | Loja | Status | Observações |
 |------|------|--------|-------------|
-| — | Aquaflora Garden Center | 🔄 em andamento | primeira loja real, fase de teste |
+| 2026-04-15 | Aquaflora GrowShop | ✅ cadastrada | id:16, 4 fotos, 4 produtos, promo quarta |
 
 ---
 
