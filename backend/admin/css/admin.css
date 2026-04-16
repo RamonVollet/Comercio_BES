@@ -2,9 +2,9 @@
    Painel Admin - Comercio BES
    =========================================== */
 :root {
-  --verde: #00C853;
-  --verde-dark: #00a344;
-  --laranja: #FF6D00;
+  --verde: #10B981;
+  --verde-dark: #047857;
+  --laranja: #EA580C;
   --escuro: #0A0A0A;
   --creme: #FFF8F0;
   --cinza-bg: #f5f5f5;
@@ -13,8 +13,8 @@
   --branco: #fff;
   --perigo: #e53935;
   --perigo-bg: #ffebee;
-  --sucesso: #00C853;
-  --sucesso-bg: #e8f5e9;
+  --sucesso: #10B981;
+  --sucesso-bg: #d1fae5;
   --sidebar-w: 260px;
   --topbar-h: 60px;
   --radius: 12px;

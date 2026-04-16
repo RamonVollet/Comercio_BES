@@ -18,7 +18,7 @@ export function abrirPedidos() {
     container.innerHTML = orders.map(o => {
       const data = new Date(o.criadoEm);
       const dataStr = data.toLocaleDateString('pt-BR') + ' ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      const statusCor = o.status === 'pendente' ? '#FF6D00' : o.status === 'confirmado' ? '#00C853' : '#aaa';
+      const statusCor = o.status === 'pendente' ? '#EA580C' : o.status === 'confirmado' ? '#10B981' : '#aaa';
       return '<div class="order-card">' +
         '<div class="order-header">' +
           '<strong>' + escapeHTML(o.id) + '</strong>' +

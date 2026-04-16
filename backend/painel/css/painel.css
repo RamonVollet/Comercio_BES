@@ -2,11 +2,11 @@
    Painel Comerciante/Cliente - Comercio BES
    =========================================== */
 :root {
-  --verde: #00C853;
-  --verde-dark: #00a344;
-  --verde-light: #e8f5e9;
-  --laranja: #FF6D00;
-  --laranja-light: #fff3e0;
+  --verde: #10B981;
+  --verde-dark: #047857;
+  --verde-light: #d1fae5;
+  --laranja: #EA580C;
+  --laranja-light: #ffedd5;
   --azul: #1565C0;
   --azul-light: #e3f2fd;
   --escuro: #0A0A0A;
@@ -18,8 +18,8 @@
   --branco: #fff;
   --perigo: #e53935;
   --perigo-bg: #ffebee;
-  --sucesso: #00C853;
-  --sucesso-bg: #e8f5e9;
+  --sucesso: #10B981;
+  --sucesso-bg: #d1fae5;
   --amarelo: #FFB300;
   --amarelo-bg: #fff8e1;
   --sidebar-w: 260px;

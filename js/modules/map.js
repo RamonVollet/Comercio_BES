@@ -21,8 +21,8 @@ export function renderMapa() {
     if (!c.lat || !c.lng) return;
 
     let cor = '#aaa';
-    if (c.aberto && c.promo && c.promo.ativo) { cor = '#FF6D00'; }
-    else if (c.aberto) { cor = '#00C853'; }
+    if (c.aberto && c.promo && c.promo.ativo) { cor = '#EA580C'; }
+    else if (c.aberto) { cor = '#10B981'; }
 
     const icon = L.divIcon({
       className: 'mapa-marker',
@@ -33,11 +33,11 @@ export function renderMapa() {
     });
 
     const statusBadge = c.aberto
-      ? '<span style="color:#00C853;font-weight:700;">✓ Aberto</span>'
+      ? '<span style="color:#10B981;font-weight:700;">✓ Aberto</span>'
       : '<span style="color:#ff4444;font-weight:700;">✗ Fechado</span>';
 
     const promoLine = (c.promo && c.promo.ativo)
-      ? '<div style="margin-top:6px;font-size:12px;color:#FF6D00;">🔥 ' + escapeHTML(c.promo.desc) + ' — ' + escapeHTML(c.promo.preco) + '</div>'
+      ? '<div style="margin-top:6px;font-size:12px;color:#EA580C;">🔥 ' + escapeHTML(c.promo.desc) + ' — ' + escapeHTML(c.promo.preco) + '</div>'
       : '';
 
     const popup = '<div class="map-popup">' +
