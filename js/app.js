@@ -4,7 +4,7 @@
 
 import { state } from './modules/state.js';
 import { API_BASE } from './config.js';
-import { aplicarTema, toggleDarkMode } from './modules/theme.js';
+import { aplicarTema, toggleDarkMode, initNavScroll } from './modules/theme.js';
 import {
   mostrarToast, mostrarSkeleton, atualizarAnoRodape,
   observarLazyImages, configurarPWAInstall,
@@ -133,6 +133,7 @@ async function carregarDados() {
 
 async function inicializar() {
   aplicarTema();
+  initNavScroll();
   await carregarDados();
   atualizarAnoRodape();
   Cart.updateBadge();

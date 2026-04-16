@@ -5,14 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Comércio BES — Boa Esperança do Sul</title>
 <meta name="description" content="Guia comercial completo de Boa Esperança do Sul. Restaurantes, farmácias, mecânicas e muito mais.">
-<meta name="theme-color" content="#00C853">
+<meta name="theme-color" content="#047857">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ComércioBES">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
 <link rel="apple-touch-icon" href="icons/icon-192.svg">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
@@ -34,9 +36,9 @@
   }
 
   .nav-login-btn:hover {
-    background: #00C853;
-    color: #000;
-    box-shadow: 0 4px 18px rgba(0,200,83,0.3);
+    background: var(--verde-escuro);
+    color: #fff;
+    box-shadow: 0 4px 18px rgba(4,120,87,0.3);
     transform: scale(1.03);
   }
 
@@ -179,7 +181,7 @@
   }
 
   body.dark-mode .conta-user-info strong {
-    color: #00C853;
+    color: var(--verde);
   }
 
   body.dark-mode .conta-logout-btn:hover {
@@ -395,8 +397,8 @@
     <div class="map-container">
       <div id="leaflet-map"></div>
       <div class="map-legend">
-        <div class="map-legend-item"><div class="map-dot" style="background:#00C853"></div> Aberto agora</div>
-        <div class="map-legend-item"><div class="map-dot" style="background:#FF6D00"></div> Promoção ativa</div>
+        <div class="map-legend-item"><div class="map-dot" style="background:#10B981"></div> Aberto agora</div>
+        <div class="map-legend-item"><div class="map-dot" style="background:#EA580C"></div> Promoção ativa</div>
         <div class="map-legend-item"><div class="map-dot" style="background:#aaa"></div> Fechado</div>
       </div>
     </div>
