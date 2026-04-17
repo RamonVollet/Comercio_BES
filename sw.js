@@ -1,5 +1,5 @@
 // ===== SERVICE WORKER — Comércio BES =====
-const CACHE_NAME = 'comercio-bes-v6';
+const CACHE_NAME = 'comercio-bes-v7';
 const OFFLINE_ASSETS = [
   './',
   './index.html',
@@ -28,7 +28,7 @@ const OFFLINE_ASSETS = [
   './js/render/modal.js',
   './data/data.json',
   './manifest.json',
-  'https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap'
+  'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap'
 ];
 
 // Install — cache shell assets

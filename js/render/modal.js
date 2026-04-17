@@ -95,7 +95,7 @@ export function abrirModal(id) {
     catalogoContainer.style.display = 'block';
     catalogoContainer.innerHTML =
       '<hr class="modal-divider">' +
-      '<p style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:17px;margin-bottom:16px;">Cardápio / Produtos</p>' +
+      '<p style="font-family:\'Plus Jakarta Sans\',sans-serif;font-weight:700;font-size:17px;margin-bottom:16px;">Cardápio / Produtos</p>' +
       '<div class="catalogo-lista">' +
         c.catalogo.map((prod, idx) =>
           '<div class="catalogo-item">' +

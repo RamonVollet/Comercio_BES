@@ -40,7 +40,7 @@ body {
   min-height: 100vh;
 }
 
-h1, h2, h3, h4 { font-family: 'Syne', sans-serif; }
+h1, h2, h3, h4 { font-family: 'Plus Jakarta Sans', sans-serif; }
 
 .page { display: none; }
 .page.active { display: flex; }
@@ -137,7 +137,7 @@ h1, h2, h3, h4 { font-family: 'Syne', sans-serif; }
 .account-title {
   font-weight: 700;
   font-size: 0.95rem;
-  font-family: 'Syne', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .account-desc {
@@ -194,7 +194,7 @@ h1, h2, h3, h4 { font-family: 'Syne', sans-serif; }
 .form-group textarea:focus {
   outline: none;
   border-color: var(--verde);
-  box-shadow: 0 0 0 3px rgba(0,200,83,0.1);
+  box-shadow: 0 0 0 3px rgba(16,185,129,0.15);
 }
 
 .form-group textarea { min-height: 80px; resize: vertical; }
@@ -215,8 +215,8 @@ h1, h2, h3, h4 { font-family: 'Syne', sans-serif; }
   gap: 6px;
 }
 
-.btn-primary { background: var(--verde); color: var(--branco); }
-.btn-primary:hover { background: var(--verde-dark); }
+.btn-primary { background: var(--verde-dark); color: var(--branco); }
+.btn-primary:hover { background: #065F46; }
 .btn-secondary { background: var(--azul); color: var(--branco); }
 .btn-secondary:hover { opacity: 0.9; }
 .btn-danger { background: var(--perigo); color: var(--branco); }
@@ -323,7 +323,7 @@ h1, h2, h3, h4 { font-family: 'Syne', sans-serif; }
 }
 
 .nav-item:hover { background: rgba(255,255,255,0.08); color: var(--branco); }
-.nav-item.active { background: rgba(0,200,83,0.15); color: var(--verde); border-right: 3px solid var(--verde); }
+.nav-item.active { background: rgba(16,185,129,0.12); color: var(--verde); border-right: 3px solid var(--verde); }
 .nav-item .nav-icon { font-size: 1.1rem; width: 24px; text-align: center; }
 .nav-item .nav-badge {
   margin-left: auto;
@@ -387,7 +387,7 @@ h1, h2, h3, h4 { font-family: 'Syne', sans-serif; }
 .stat-card .stat-value {
   font-size: 1.8rem;
   font-weight: 800;
-  font-family: 'Syne', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .stat-card .stat-label {
@@ -461,7 +461,7 @@ table tr:hover td { background: var(--cinza-100); }
 .store-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
 .store-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .store-card-emoji { font-size: 2rem; }
-.store-card-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; }
+.store-card-name { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 1rem; }
 .store-card-status { font-size: 0.75rem; color: var(--cinza-texto); }
 .store-card-status.open { color: var(--verde); }
 .store-card-status.closed { color: var(--perigo); }
@@ -479,7 +479,7 @@ table tr:hover td { background: var(--cinza-100); }
 
 .order-card:hover { box-shadow: var(--shadow-lg); }
 .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.order-code { font-family: 'Syne', sans-serif; font-weight: 700; }
+.order-code { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; }
 .order-items { font-size: 0.85rem; color: var(--cinza-texto); margin-bottom: 8px; }
 .order-footer { display: flex; justify-content: space-between; align-items: center; }
 .order-total { font-weight: 700; font-size: 1.1rem; }

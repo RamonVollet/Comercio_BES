@@ -42,7 +42,7 @@ export function renderMapa() {
 
     const popup = '<div class="map-popup">' +
       '<div style="font-size:24px;text-align:center;margin-bottom:6px;">' + escapeHTML(c.emoji) + '</div>' +
-      '<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;text-align:center;">' + escapeHTML(c.nome) + '</div>' +
+      '<div style="font-family:\'Plus Jakarta Sans\',sans-serif;font-weight:700;font-size:15px;text-align:center;">' + escapeHTML(c.nome) + '</div>' +
       '<div style="font-size:12px;color:#888;text-align:center;margin:4px 0;">' + escapeHTML(c.categoria).toUpperCase() + ' · ⭐ ' + escapeHTML(String(c.rating)) + '</div>' +
       '<div style="font-size:13px;text-align:center;margin:4px 0;">📍 ' + escapeHTML(c.endereco) + '</div>' +
       '<div style="font-size:13px;text-align:center;">' + statusBadge + '</div>' +
