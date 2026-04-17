@@ -17,8 +17,9 @@ Guia comercial digital que conecta moradores ao comércio local, centralizando i
 - **Catálogo de produtos** com envio de pedido formatado via WhatsApp
 - **Avaliação com estrelas** — salva no banco de dados com média em tempo real
 - **API REST** — backend Node.js/Express com autenticação JWT
-- **Painel administrativo** (`/admin`) — CRUD de lojas, produtos, promoções, estatísticas
-- **Painel do comerciante** (`/painel`) — gestão da própria loja, produtos e pedidos
+- **Painel Único (RBAC)** (`/minha-conta`) — Interface consolidada para Cliente, Lojista e Admin
+- **Painel administrativo** (via Painel Único) — CRUD de lojas, moderação, usuários, logs
+- **Painel do comerciante** (via Painel Único) — gestão da própria loja, produtos, estoque, pedidos e recebíveis
 - **Sistema de pedidos** — criação, acompanhamento e atualização de status
 - **Pagamentos** — integração com Mercado Pago (PIX)
 - **Upload de imagens** — armazenamento local + Cloudinary opcional
@@ -80,14 +81,12 @@ comercio_bes/
 │   │   │   ├── upload.js        # POST /api/upload
 │   │   │   └── estatisticas.js  # POST /api/estatisticas/registrar
 │   │   └── controllers/         # Lógica de cada rota
-│   ├── admin/                   # Painel do administrador (/admin)
+│   ├── minha-conta/             # Painel Único SPA (Vanilla ESM)
 │   │   ├── index.html
-│   │   ├── css/admin.css
-│   │   └── js/admin.js
-│   ├── painel/                  # Painel do comerciante (/painel)
-│   │   ├── index.html
-│   │   ├── css/painel.css
-│   │   └── js/painel.js
+│   │   ├── css/shell.css
+│   │   └── js/
+│   │       ├── app.js           # Router e gerenciador de estado
+│   │       └── sections/        # Seções de Admin, Cliente e Comerciante
 │   └── uploads/                 # Imagens enviadas (local)
 ├── docs/
 │   ├── contexto.md
@@ -125,7 +124,7 @@ npm run dev
 
 O backend roda em `http://localhost:3000`:
 - **API:** `http://localhost:3000/api`
-- **Admin:** `http://localhost:3000/admin`
+- **Painel Único:** `http://localhost:3000/minha-conta`
 
 **Credenciais de acesso (seed):**
 - Admin: `admin@comerciobes.com` / `admin123`
