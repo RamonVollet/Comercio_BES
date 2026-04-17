@@ -3,7 +3,7 @@
 // Minha Conta (ESM + history.pushState)
 // ===========================================
 
-import { resolveSection, getMenuByCapabilities } from './sections.js';
+import { resolveSection, getMenuByRole } from './sections.js';
 
 // --- Estado global da SPA ---
 let ctx = null;           // { user, capabilities, stores, activeStoreId, csrfToken }
@@ -109,7 +109,7 @@ function renderStoreSwitcher() {
 // 4. Sidebar
 // =====================================================
 function renderSidebar() {
-    const menu = getMenuByCapabilities(ctx.capabilities);
+    const menu = getMenuByRole(ctx.user.role);
 
     navEl.innerHTML = ''; // remove skeleton
 
@@ -162,7 +162,7 @@ async function navigate(pathname, pushState = true) {
     // Fecha drawer no mobile
     closeSidebar();
 
-    const section = resolveSection(pathname, ctx.capabilities);
+    const section = resolveSection(pathname, ctx.user.role);
 
     if (!section) {
         if (pathname !== '/minha-conta') {
@@ -184,7 +184,7 @@ async function navigate(pathname, pushState = true) {
 }
 
 async function navigateTo(from, to) {
-    const section = resolveSection(to, ctx.capabilities);
+    const section = resolveSection(to, ctx.user.role);
     if (!section) { render403(); return; }
     history.replaceState({ path: to }, '', to);
     updateNavActive(to);

@@ -5,9 +5,9 @@
 let _cleanup = [];
 
 export function mount(container, ctx) {
-    _cleanup = [];
+  _cleanup = [];
 
-    container.innerHTML = `
+  container.innerHTML = `
     <section class="usuarios-section">
       <div class="section-header-row">
         <div>
@@ -55,30 +55,30 @@ export function mount(container, ctx) {
     </style>
   `;
 
-    // Assume rota /api/admin/usuarios (se existir, senao mock p/ MVP)
-    // Como nao vi rota admin na Fase 1 e no legado era apenas fetch direto ou sem rota de listagem pra admin exposta
-    // Vou mockar com a base do schema para MVP, o admin routes seria fase 3 backend, let's load what we can.
-    // Vou assumir que ainda vamos buildar rotas de admin ou as que existirem.
+  // Assume rota /api/admin/usuarios (se existir, senao mock p/ MVP)
+  // Como nao vi rota admin na Fase 1 e no legado era apenas fetch direto ou sem rota de listagem pra admin exposta
+  // Vou mockar com a base do schema para MVP, o admin routes seria fase 3 backend, let's load what we can.
+  // Vou assumir que ainda vamos buildar rotas de admin ou as que existirem.
 
-    carregarUsuarios(container, ctx);
+  carregarUsuarios(container, ctx);
 }
 
 async function carregarUsuarios(container, ctx) {
-    const tbody = container.querySelector('tbody');
-    try {
-        // API Legado /admin/usuarios existe? Vamos assumir que sim por enquanto ou fazer erro gracefull
-        const res = await fetch('/api/usuarios', { credentials: 'include' });
-        if (!res.ok) throw new Error();
-        const data = await res.json();
-        // Assuming data is an array of users for the sake of MVP
-        const users = Array.isArray(data) ? data : (data.usuarios || []);
+  const tbody = container.querySelector('tbody');
+  try {
+    // API Legado /admin/usuarios existe? Vamos assumir que sim por enquanto ou fazer erro gracefull
+    const res = await fetch('/api/usuarios', { credentials: 'include' });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    // Assuming data is an array of users for the sake of MVP
+    const users = Array.isArray(data) ? data : (data.usuarios || []);
 
-        if (!users.length) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Nenhum dado retornado (verifique a API)</td></tr>';
-            return;
-        }
+    if (!users.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Nenhum dado retornado (verifique a API)</td></tr>';
+      return;
+    }
 
-        tbody.innerHTML = users.map(u => `
+    tbody.innerHTML = users.map(u => `
       <tr>
         <td style="color:var(--text-muted)">#${u.id}</td>
         <td style="font-weight:600">${u.nome}</td>
@@ -87,12 +87,16 @@ async function carregarUsuarios(container, ctx) {
         <td>${new Date(u.createdAt).toLocaleDateString('pt-BR')}</td>
       </tr>
     `).join('');
-    } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--danger)">Erro ao carregar (Endpoint /api/usuarios pode não existir para o frontend Vanilla)</td></tr>`;
-    }
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 40px; color:var(--text-muted)">
+          <div style="font-size: 2rem; margin-bottom: 10px;">🚧</div>
+          <strong style="color:var(--text)">Módulo em Construção</strong><br>
+          A API de gerenciamento (CRUD) será conectada na próxima fase.
+        </td></tr>`;
+  }
 }
 
 export function unmount() {
-    _cleanup.forEach(fn => fn());
-    _cleanup = [];
+  _cleanup.forEach(fn => fn());
+  _cleanup = [];
 }

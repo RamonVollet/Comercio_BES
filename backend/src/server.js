@@ -130,35 +130,10 @@ app.use(cookieParser());
 // Request logging
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
-// --- Painel legado admin (controlado por LEGACY_PANELS) ---
-const LEGACY_ON = (process.env.LEGACY_PANELS || 'on') !== 'off';
-
-if (LEGACY_ON) {
-  // Manter legado funcional
-  app.use('/admin', (req, res, next) => {
-    if (process.env.NODE_ENV === 'production') {
-      const jwt = require('jsonwebtoken');
-      const token = req.query.token || (req.headers.authorization && req.headers.authorization.replace('Bearer ', ''));
-      if (!token) return res.status(401).json({ error: 'Acesso nao autorizado. Use ?token=SEU_JWT_TOKEN' });
-      try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
-        if (decoded.tipo !== 'admin') return res.status(403).json({ error: 'Acesso restrito a administradores' });
-        next();
-      } catch {
-        return res.status(401).json({ error: 'Token invalido ou expirado' });
-      }
-    } else {
-      next();
-    }
-  }, express.static(path.join(__dirname, '..', 'admin')));
-
-  app.use('/painel', express.static(path.join(__dirname, '..', 'painel')));
-} else {
-  // LEGACY_PANELS=off → redirecionar para Minha Conta
-  app.use(['/admin', '/painel'], (req, res) => {
-    res.redirect(301, '/minha-conta');
-  });
-}
+// --- Redirecionamento de rotas legadas ---
+app.use(['/admin', '/painel'], (req, res) => {
+  res.redirect(301, '/minha-conta');
+});
 
 // --- Painel Único: Minha Conta (SPA vanilla com auth por cookie) ---
 app.use(
@@ -170,7 +145,12 @@ app.get('/minha-conta/*', authByCookie, (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'minha-conta', 'index.html'));
 });
 
-// Servir painel do comerciante/usuario (autenticacao via JS no cliente) — removido do bloco LEGACY
+// --- Frontend Principal (Se acessado pela porta 3000) ---
+app.get('/login', (req, res) => res.sendFile(path.join(__dirname, '..', '..', 'html', 'login.html')));
+app.get('/cadastro', (req, res) => res.sendFile(path.join(__dirname, '..', '..', 'html', 'cadastro.html')));
+
+// Servir estáticos da raiz do projeto (index.html, css/, js/, etc.)
+app.use(express.static(path.join(__dirname, '..', '..')));
 
 // Servir uploads locais (com cross-origin resource policy para imagens)
 app.use('/uploads', (req, res, next) => {
@@ -218,7 +198,7 @@ if (require.main === module) {
     console.log(`\n=== Comercio BES API ===`);
     console.log(`Servidor rodando em http://localhost:${PORT}`);
     console.log(`API:    http://localhost:${PORT}/api`);
-    console.log(`Admin:  http://localhost:${PORT}/admin`);
+    console.log(`Painel: http://localhost:${PORT}/minha-conta`);
     console.log(`Env:    ${process.env.NODE_ENV || 'development'}`);
     console.log(`========================\n`);
   });

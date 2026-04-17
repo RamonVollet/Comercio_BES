@@ -128,24 +128,16 @@ O backend roda em `http://localhost:3000`:
 
 **Credenciais de acesso (seed):**
 - Admin: `admin@comerciobes.com` / `admin123`
-- Lojista demo: `lojista@comerciobes.com` / `lojista123`
+- Lojista demo: `comerciante@demo.com` / `demo123`
 
 ### 2. Frontend
 
-```bash
-# Na raiz do projeto, servir com qualquer HTTP server
-# Exemplo com Python:
-python -m http.server 8080
+Todo o sistema (incluindo o novo _Painel Único SPA_ e as rotas raiz do site) é **Nativamente Servido pelo Express do Backend**. 
 
-# Exemplo com Node.js:
-npx serve . -p 8080
-```
+Ao rodar o comando `npm run dev` na pasta `backend`, a aplicação inteira fica acessível num único host:
+Acesse **[http://localhost:3000](http://localhost:3000)** no navegador.
 
-Acesse `http://localhost:8080` no navegador. O frontend detecta automaticamente se a API está disponível em `localhost:3000` e faz fallback para `data/data.json` caso contrário.
-
-### Direto no navegador
-
-Abra `index.html` — funciona em modo offline com dados do `data.json`. Funcionalidades que dependem da API (avaliações reais, estatísticas, auth via banco) ficam desabilitadas.
+> Nota: não é mais necessário levantar servidores HTTP paralelos (como o `http.server` do Python ou `npx serve`) na pasta raiz, pois eles não possuem os fallbacks da History API necessários para que a SPA funcione perfeitamente.
 
 ## API REST
 
