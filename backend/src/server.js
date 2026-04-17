@@ -8,8 +8,10 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 
 const errorHandler = require('./middleware/errorHandler');
+const { authByCookie } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 const comerciosRoutes = require('./routes/comercios');
 const categoriasRoutes = require('./routes/categorias');
@@ -84,7 +86,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
 }));
 
 // Rate limiting (desabilitado em testes para nao interferir com volume de requests)
@@ -122,35 +124,53 @@ if (process.env.NODE_ENV !== 'test') {
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
+// Cookie parsing (necessário para cookie httpOnly de auth)
+app.use(cookieParser());
+
 // Request logging
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
-// Servir arquivos estaticos do painel admin (protegido por auth via cookie/token)
-// Em producao, requer autenticacao. Em dev, permite acesso livre.
-app.use('/admin', (req, res, next) => {
-  if (process.env.NODE_ENV === 'production') {
-    // Verificar token no query param ou header (para acesso ao admin)
-    const jwt = require('jsonwebtoken');
-    const token = req.query.token || (req.headers.authorization && req.headers.authorization.replace('Bearer ', ''));
-    if (!token) {
-      return res.status(401).json({ error: 'Acesso nao autorizado. Use ?token=SEU_JWT_TOKEN' });
-    }
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
-      if (decoded.tipo !== 'admin') {
-        return res.status(403).json({ error: 'Acesso restrito a administradores' });
-      }
-      next();
-    } catch {
-      return res.status(401).json({ error: 'Token invalido ou expirado' });
-    }
-  } else {
-    next();
-  }
-}, express.static(path.join(__dirname, '..', 'admin')));
+// --- Painel legado admin (controlado por LEGACY_PANELS) ---
+const LEGACY_ON = (process.env.LEGACY_PANELS || 'on') !== 'off';
 
-// Servir painel do comerciante/usuario (autenticacao via JS no cliente)
-app.use('/painel', express.static(path.join(__dirname, '..', 'painel')));
+if (LEGACY_ON) {
+  // Manter legado funcional
+  app.use('/admin', (req, res, next) => {
+    if (process.env.NODE_ENV === 'production') {
+      const jwt = require('jsonwebtoken');
+      const token = req.query.token || (req.headers.authorization && req.headers.authorization.replace('Bearer ', ''));
+      if (!token) return res.status(401).json({ error: 'Acesso nao autorizado. Use ?token=SEU_JWT_TOKEN' });
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+        if (decoded.tipo !== 'admin') return res.status(403).json({ error: 'Acesso restrito a administradores' });
+        next();
+      } catch {
+        return res.status(401).json({ error: 'Token invalido ou expirado' });
+      }
+    } else {
+      next();
+    }
+  }, express.static(path.join(__dirname, '..', 'admin')));
+
+  app.use('/painel', express.static(path.join(__dirname, '..', 'painel')));
+} else {
+  // LEGACY_PANELS=off → redirecionar para Minha Conta
+  app.use(['/admin', '/painel'], (req, res) => {
+    res.redirect(301, '/minha-conta');
+  });
+}
+
+// --- Painel Único: Minha Conta (SPA vanilla com auth por cookie) ---
+app.use(
+  '/minha-conta',
+  authByCookie,
+  express.static(path.join(__dirname, '..', 'minha-conta'))
+);
+app.get('/minha-conta/*', authByCookie, (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'minha-conta', 'index.html'));
+});
+
+// Servir painel do comerciante/usuario (autenticacao via JS no cliente) — removido do bloco LEGACY
 
 // Servir uploads locais (com cross-origin resource policy para imagens)
 app.use('/uploads', (req, res, next) => {

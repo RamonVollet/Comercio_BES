@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Minha Conta — Comércio BES</title>
+
+  <!-- Fontes (visual.md) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/minha-conta/css/shell.css" />
+</head>
+<body>
+
+  <!-- ========================= SIDEBAR ========================= -->
+  <aside id="sidebar" role="navigation" aria-label="Menu principal">
+    <div class="sidebar-header">
+      <span class="brand-logo">🏪</span>
+      <span class="brand-name">Comércio BES</span>
+      <button id="sidebar-close" class="sidebar-close" aria-label="Fechar menu">✕</button>
+    </div>
+
+    <nav id="sidebar-nav">
+      <!-- Preenchido dinamicamente por app.js -->
+      <div class="nav-skeleton" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button id="btn-logout" class="btn-logout" type="button">
+        <span class="icon">↩</span> Sair
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========================= TOPBAR ========================= -->
+  <header id="topbar" role="banner">
+    <!-- Hamburger (mobile) -->
+    <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
+      ☰
+    </button>
+
+    <h1 class="topbar-title">Minha Conta</h1>
+
+    <!-- Store switcher (comerciante multi-loja) — oculto por padrão -->
+    <div id="store-switcher" class="store-switcher hidden" aria-label="Trocar loja ativa">
+      <label for="store-select" class="sr-only">Loja ativa</label>
+      <select id="store-select"></select>
+    </div>
+
+    <div class="topbar-user" id="topbar-user" aria-live="polite">
+      <!-- Nome do usuário preenchido por app.js -->
+    </div>
+  </header>
+
+  <!-- ========================= CONTENT ========================= -->
+  <main id="content" role="main" aria-live="polite">
+    <!-- Estado de carregamento inicial -->
+    <div class="content-loading" id="initial-loading">
+      <div class="spinner" aria-label="Carregando..."></div>
+    </div>
+  </main>
+
+  <!-- ========================= OVERLAY (mobile) ============= -->
+  <div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
+
+  <script type="module" src="/minha-conta/js/app.js"></script>
+</body>
+</html>

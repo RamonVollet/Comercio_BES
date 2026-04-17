@@ -39,11 +39,15 @@ model User {
   // --- Campos exclusivos CLIENTE ---
   cpf String? // CPF do cliente (para pagamentos)
 
+  // --- Auth: refresh token ---
+  refreshTokenHash String? // Hash bcrypt do refresh token ativo (null = nenhum)
+
   // --- Relacoes ---
   comercios   Comercio[]
   avaliacoes  Avaliacao[]
   enderecos   Endereco[]
   pedidos     Pedido[]     @relation("ClientePedidos")
+  auditLogs   AuditLog[]
 
   @@map("users")
 }
@@ -249,4 +253,19 @@ model Pagamento {
   pedido Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
 
   @@map("pagamentos")
+}
+
+// --- Audit Log (acoes criticas de admin) ---
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  action    String   // ex: "user.delete", "store.moderate", "role.change"
+  resource  String   // ex: "User:42", "Comercio:7"
+  meta      String?  // JSON serializado
+  ip        String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
 }
