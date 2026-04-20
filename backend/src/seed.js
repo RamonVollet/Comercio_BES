@@ -14,17 +14,25 @@ const prisma = new PrismaClient();
 // Mapeamento de categorias do data.json
 const categoriasMap = {
   'restaurante': { nome: 'Restaurante', slug: 'restaurante', emoji: '🍽️' },
-  'farmácia': { nome: 'Farmacia', slug: 'farmacia', emoji: '💊' },
+  'farmacia': { nome: 'Farmacia', slug: 'farmacia', emoji: '💊' },
   'pet': { nome: 'Pet Shop', slug: 'pet', emoji: '🐾' },
-  'mecânica': { nome: 'Mecanica', slug: 'mecanica', emoji: '🔧' },
+  'mecanica': { nome: 'Mecanica', slug: 'mecanica', emoji: '🔧' },
   'barbearia': { nome: 'Barbearia', slug: 'barbearia', emoji: '💈' },
   'supermercado': { nome: 'Supermercado', slug: 'supermercado', emoji: '🛒' },
   'roupa': { nome: 'Moda', slug: 'moda', emoji: '👗' },
-  'salão': { nome: 'Salao', slug: 'salao', emoji: '💅' },
+  'salao': { nome: 'Salao', slug: 'salao', emoji: '💅' },
   'padaria': { nome: 'Padaria', slug: 'padaria', emoji: '🍞' },
-  'gás': { nome: 'Gas', slug: 'gas', emoji: '🔥' },
+  'gas': { nome: 'Gas', slug: 'gas', emoji: '🔥' },
   'material': { nome: 'Material de Construcao', slug: 'material', emoji: '🏗️' }
 };
+
+function normalizeCategoriaKey(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
 
 async function seed() {
   console.log('=== Iniciando seed do banco de dados ===\n');
@@ -87,7 +95,7 @@ async function seed() {
 
   // 5. Importar comercios
   for (const c of data.comercios) {
-    const categoriaKey = c.categoria;
+    const categoriaKey = normalizeCategoriaKey(c.categoria);
     const categoria = categoriasCriadas[categoriaKey];
 
     if (!categoria) {

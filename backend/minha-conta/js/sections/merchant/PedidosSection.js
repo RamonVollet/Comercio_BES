@@ -1,15 +1,16 @@
 // =====================================================
 // PedidosSection.js — Gerenciamento de pedidos (comerciante)
 // =====================================================
+import { esc } from '../../utils.js';
 
 let _cleanup = [];
 let _currentPage = 1;
 
 export function mount(container, ctx) {
-    _cleanup = [];
-    _currentPage = 1;
+  _cleanup = [];
+  _currentPage = 1;
 
-    container.innerHTML = `
+  container.innerHTML = `
     <section class="pedidos-section">
       <div class="section-header-row">
         <div>
@@ -82,95 +83,92 @@ export function mount(container, ctx) {
     </style>
   `;
 
-    if (!ctx.activeStoreId) {
-        container.querySelector('#no-store-banner').classList.remove('hidden');
-        container.querySelector('#pedidos-filters').classList.add('hidden');
-        container.querySelector('#pedidos-list').classList.add('hidden');
-        return;
-    }
+  if (!ctx.activeStoreId) {
+    container.querySelector('#no-store-banner').classList.remove('hidden');
+    container.querySelector('#pedidos-filters').classList.add('hidden');
+    container.querySelector('#pedidos-list').classList.add('hidden');
+    return;
+  }
 
-    carregarPedidos(container, ctx, 1);
+  carregarPedidos(container, ctx, 1);
 
-    const filtro = container.querySelector('#filtro-status');
-    filtro.addEventListener('change', () => carregarPedidos(container, ctx, 1));
-    _cleanup.push(() => filtro.removeEventListener('change', () => { }));
+  const filtro = container.querySelector('#filtro-status');
+  filtro.addEventListener('change', () => carregarPedidos(container, ctx, 1));
+  _cleanup.push(() => filtro.removeEventListener('change', () => { }));
 }
 
 async function carregarPedidos(container, ctx, page) {
-    _currentPage = page;
-    const listaEl = container.querySelector('#pedidos-list');
-    const pagEl = container.querySelector('#paginacao');
-    const status = container.querySelector('#filtro-status').value;
+  _currentPage = page;
+  const listaEl = container.querySelector('#pedidos-list');
+  const pagEl = container.querySelector('#paginacao');
+  const status = container.querySelector('#filtro-status').value;
 
-    listaEl.innerHTML = '<div class="content-loading"><div class="spinner"></div></div>';
-    pagEl.classList.add('hidden');
+  listaEl.innerHTML = '<div class="content-loading"><div class="spinner"></div></div>';
+  pagEl.classList.add('hidden');
 
-    try {
-        const params = new URLSearchParams({ page, limit: 10 });
-        if (status) params.set('status', status);
+  try {
+    const params = new URLSearchParams({ page, limit: 10, comercioId: ctx.activeStoreId });
+    if (status) params.set('status', status);
 
-        const res = await fetch(`/api/pedidos?${params}`, { credentials: 'include' });
-        if (!res.ok) throw new Error();
-        const { pedidos, paginacao } = await res.json();
+    const res = await fetch(`/api/pedidos?${params}`, { credentials: 'include' });
+    if (!res.ok) throw new Error();
+    const { pedidos, paginacao } = await res.json();
 
-        // Filtra no frontend apenas os da loja ativa atual, já que a API retorna todas as lojas do merchant
-        const pedidosLoja = pedidos.filter(p => p.comercioId === ctx.activeStoreId);
-
-        if (!pedidosLoja.length) {
-            listaEl.innerHTML = `
+    if (!pedidos.length) {
+      listaEl.innerHTML = `
         <div class="section-empty">
           <h2>Nenhum pedido</h2>
           <p>Não há pedidos para a loja selecionada com os filtros atuais.</p>
         </div>`;
-            return;
-        }
-
-        listaEl.innerHTML = pedidosLoja.map(p => renderPedidoCard(p)).join('');
-
-        // Eventos de alteração de status
-        listaEl.querySelectorAll('.btn-status[data-status]').forEach(btn => {
-            btn.addEventListener('click', () => atualizarStatus(btn.dataset.codigo, btn.dataset.status, container, ctx));
-        });
-
-    } catch {
-        listaEl.innerHTML = '<div class="section-error"><h2>Erro ao carregar pedidos</h2></div>';
+      return;
     }
+
+    listaEl.innerHTML = pedidos.map(p => renderPedidoCard(p)).join('');
+
+    // Eventos de alteração de status
+    listaEl.querySelectorAll('.btn-status[data-status]').forEach(btn => {
+      btn.addEventListener('click', () => atualizarStatus(btn.dataset.codigo, btn.dataset.status, container, ctx));
+    });
+
+  } catch {
+    listaEl.innerHTML = '<div class="section-error"><h2>Erro ao carregar pedidos</h2></div>';
+  }
 }
 
 function renderPedidoCard(p) {
-    const itensTxt = p.itens.map(i => `<b>${i.quantidade}x</b> ${i.nome}`).join('<br>');
-    const end = p.endereco ? `📍 ${p.endereco.rua}, ${p.endereco.numero} - ${p.endereco.bairro}` : '📍 Retirada no local';
-    const total = p.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const itensTxt = p.itens.map(i => `<b>${esc(String(i.quantidade))}x</b> ${esc(i.nome)}`).join('<br>');
+  const end = p.endereco ? `📍 ${esc(p.endereco.rua)}, ${esc(p.endereco.numero)} - ${esc(p.endereco.bairro)}` : '📍 Retirada no local';
+  const total = p.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-    const statusLabel = {
-        pendente: '⏳ Pendente', confirmado: '✅ Confirmado',
-        preparando: '👨‍🍳 Preparando', saiu_entrega: '🚚 Em entrega',
-        entregue: '✔️ Entregue', cancelado: '❌ Cancelado',
-    }[p.status] || p.status;
+  const statusLabel = {
+    pendente: '⏳ Pendente', confirmado: '✅ Confirmado',
+    preparando: '👨‍🍳 Preparando', saiu_entrega: '🚚 Em entrega',
+    entregue: '✔️ Entregue', cancelado: '❌ Cancelado',
+  }[p.status] || esc(p.status);
 
-    // Botões de ação baseados no status atual
-    let acoes = '';
-    if (p.status === 'pendente') {
-        acoes = `
-      <button class="btn-status" data-codigo="${p.codigo}" data-status="confirmado">Confirmar</button>
-      <button class="btn-status danger" data-codigo="${p.codigo}" data-status="cancelado">Cancelar</button>
+  // Botões de ação baseados no status atual
+  let acoes = '';
+  if (p.status === 'pendente') {
+    acoes = `
+      <button class="btn-status" data-codigo="${esc(p.codigo)}" data-status="confirmado">Confirmar</button>
+      <button class="btn-status danger" data-codigo="${esc(p.codigo)}" data-status="cancelado">Cancelar</button>
     `;
-    } else if (p.status === 'confirmado') {
-        acoes = `<button class="btn-status" data-codigo="${p.codigo}" data-status="preparando">Iniciar Preparo</button>`;
-    } else if (p.status === 'preparando') {
-        acoes = `<button class="btn-status" data-codigo="${p.codigo}" data-status="saiu_entrega">Despachar Entrega</button>`;
-    } else if (p.status === 'saiu_entrega') {
-        acoes = `<button class="btn-status" data-codigo="${p.codigo}" data-status="entregue">Marcar Entregue</button>`;
-    }
+  } else if (p.status === 'confirmado') {
+    acoes = `<button class="btn-status" data-codigo="${esc(p.codigo)}" data-status="preparando">Iniciar Preparo</button>`;
+  } else if (p.status === 'preparando') {
+    acoes = `<button class="btn-status" data-codigo="${esc(p.codigo)}" data-status="saiu_entrega">Despachar Entrega</button>`;
+  } else if (p.status === 'saiu_entrega') {
+    acoes = `<button class="btn-status" data-codigo="${esc(p.codigo)}" data-status="entregue">Marcar Entregue</button>`;
+  }
 
-    return `
+  return `
     <article class="pedido-card">
       <div class="pedido-header">
         <div class="pedido-header-left">
-          <span class="pedido-codigo">${p.codigo}</span>
-          <span class="pedido-cliente">👤 ${p.cliente?.nome || 'Cliente'}</span>
+          <span class="pedido-codigo">${esc(p.codigo)}</span>
+          <span class="pedido-cliente">👤 ${esc(p.cliente?.nome) || 'Cliente'}</span>
         </div>
-        <span class="pedido-status status-${p.status}">${statusLabel}</span>
+        <span class="pedido-status status-${esc(p.status)}">${statusLabel}</span>
       </div>
       <div class="pedido-body">
         <div class="pedido-itens">${itensTxt}</div>
@@ -185,27 +183,27 @@ function renderPedidoCard(p) {
 }
 
 async function atualizarStatus(codigo, status, container, ctx) {
-    let body = { status };
-    if (status === 'cancelado') {
-        const motivo = prompt('Motivo do cancelamento:');
-        if (!motivo) return;
-        body.motivoCancelamento = motivo;
-    }
+  let body = { status };
+  if (status === 'cancelado') {
+    const motivo = prompt('Motivo do cancelamento:');
+    if (!motivo) return;
+    body.motivoCancelamento = motivo;
+  }
 
-    try {
-        const res = await fetch(`/api/pedidos/${codigo}/status`, {
-            method: 'PUT', credentials: 'include',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': ctx.csrfToken },
-            body: JSON.stringify(body)
-        });
-        if (res.ok) carregarPedidos(container, ctx, _currentPage);
-        else alert('Erro ao atualizar pedido');
-    } catch {
-        alert('Erro de rede');
-    }
+  try {
+    const res = await fetch(`/api/pedidos/${codigo}/status`, {
+      method: 'PUT', credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': ctx.csrfToken },
+      body: JSON.stringify(body)
+    });
+    if (res.ok) carregarPedidos(container, ctx, _currentPage);
+    else alert('Erro ao atualizar pedido');
+  } catch {
+    alert('Erro de rede');
+  }
 }
 
 export function unmount() {
-    _cleanup.forEach(fn => fn());
-    _cleanup = [];
+  _cleanup.forEach(fn => fn());
+  _cleanup = [];
 }

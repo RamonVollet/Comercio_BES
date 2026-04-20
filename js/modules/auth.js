@@ -9,16 +9,24 @@ import { state } from './state.js';
 export const Auth = {
   getSession() { return storageGet(KEYS.SESSION); },
 
-  getToken() { return storageGet(KEYS.API_TOKEN); },
+  // Sessao principal usa cookies httpOnly; nao persistimos Bearer em localStorage.
+  getToken() { return null; },
 
   isLoggedIn() { return !!this.getSession(); },
 
   getUser() { return this.getSession(); },
 
-  async register(nome, email, tel, senha, tipo, _dadosLoja) {
+  async register(nome, email, tel, senha, tipo, dadosLoja = null) {
     try {
       const body = { nome, email, senha, telefone: tel || undefined };
       body.tipo = tipo === 'lojista' ? 'comerciante' : 'cliente';
+
+      if (body.tipo === 'comerciante' && dadosLoja) {
+        body.nomeFantasia = dadosLoja.nomeFantasia || dadosLoja.nome || undefined;
+        body.cpfCnpj = dadosLoja.cpfCnpj || undefined;
+        body.enderecoComercial = dadosLoja.enderecoComercial || undefined;
+        body.telefoneComercial = dadosLoja.telefoneComercial || dadosLoja.whatsapp || undefined;
+      }
 
       const res = await fetch(API_BASE + '/auth/registro', {
         method: 'POST',
@@ -29,7 +37,7 @@ export const Auth = {
       const data = await res.json();
       if (!res.ok) return { ok: false, msg: data.error || 'Erro ao criar conta.' };
 
-      storageSet(KEYS.API_TOKEN, data.token);
+      localStorage.removeItem(KEYS.API_TOKEN);
       storageSet(KEYS.SESSION, {
         userId: data.user.id,
         nome: data.user.nome,
@@ -55,7 +63,7 @@ export const Auth = {
       const data = await res.json();
       if (!res.ok) return { ok: false, msg: data.error || 'E-mail ou senha incorretos.' };
 
-      storageSet(KEYS.API_TOKEN, data.token);
+      localStorage.removeItem(KEYS.API_TOKEN);
       storageSet(KEYS.SESSION, {
         userId: data.user.id,
         nome: data.user.nome,

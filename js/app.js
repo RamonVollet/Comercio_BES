@@ -4,6 +4,7 @@
 
 import { state } from './modules/state.js';
 import { API_BASE } from './config.js';
+import { ENABLE_DATA_FALLBACK } from './config.js';
 import { aplicarTema, toggleDarkMode, initNavScroll } from './modules/theme.js';
 import {
   mostrarToast, mostrarSkeleton, atualizarAnoRodape,
@@ -110,8 +111,15 @@ async function carregarDados() {
     state.apiDisponivel = true;
     console.log('[ComércioBES] API conectada — ' + state.comercios.length + ' comércios carregados');
   } catch (apiErr) {
-    console.warn('[ComércioBES] API indisponível, usando data.json:', apiErr.message);
     state.apiDisponivel = false;
+
+    if (!ENABLE_DATA_FALLBACK) {
+      console.error('[ComércioBES] API indisponível e fallback de mock desabilitado:', apiErr.message);
+      mostrarToast('⚠️ Não foi possível carregar os dados da API.');
+      return;
+    }
+
+    console.warn('[ComércioBES] API indisponível, usando data.json:', apiErr.message);
     try {
       const res = await fetch('data/data.json');
       if (!res.ok) throw new Error('HTTP ' + res.status);

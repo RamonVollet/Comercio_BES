@@ -150,9 +150,19 @@ async function listar(req, res, next) {
         where: { ownerId: req.userId },
         select: { id: true }
       });
-      where.comercioId = { in: comercios.map(c => c.id) };
+      const idsDoUsuario = comercios.map(c => c.id);
+
+      // Se passou ?comercioId, filtrar apenas por essa loja (validando pertencimento)
+      const comercioIdParam = parseInt(req.query.comercioId, 10);
+      if (!isNaN(comercioIdParam) && idsDoUsuario.includes(comercioIdParam)) {
+        where.comercioId = comercioIdParam;
+      } else {
+        where.comercioId = { in: idsDoUsuario };
+      }
     } else if (req.userTipo === 'admin') {
-      // Admin ve tudo
+      // Admin ve tudo (mas pode filtrar por ?comercioId se quiser)
+      const comercioIdParam = parseInt(req.query.comercioId, 10);
+      if (!isNaN(comercioIdParam)) where.comercioId = comercioIdParam;
     } else {
       // Cliente ve apenas seus pedidos
       where.clienteId = req.userId;

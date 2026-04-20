@@ -1,15 +1,16 @@
 // =====================================================
 // HistoricoSection.js — Histórico de pedidos (cliente)
 // =====================================================
+import { esc } from '../../utils.js';
 
 let _cleanup = [];
 let _currentPage = 1;
 
 export function mount(container, ctx) {
-    _cleanup = [];
-    _currentPage = 1;
+  _cleanup = [];
+  _currentPage = 1;
 
-    container.innerHTML = `
+  container.innerHTML = `
     <section class="historico-section">
       <div class="section-header">
         <h2 class="section-title">🛍️ Meus Pedidos</h2>
@@ -75,82 +76,82 @@ export function mount(container, ctx) {
     </style>
   `;
 
-    carregarPedidos(container, ctx, 1);
+  carregarPedidos(container, ctx, 1);
 
-    const filtro = container.querySelector('#filtro-status');
-    const onFiltro = () => carregarPedidos(container, ctx, 1);
-    filtro.addEventListener('change', onFiltro);
-    _cleanup.push(() => filtro.removeEventListener('change', onFiltro));
+  const filtro = container.querySelector('#filtro-status');
+  const onFiltro = () => carregarPedidos(container, ctx, 1);
+  filtro.addEventListener('change', onFiltro);
+  _cleanup.push(() => filtro.removeEventListener('change', onFiltro));
 }
 
 async function carregarPedidos(container, ctx, page) {
-    _currentPage = page;
-    const listaEl = container.querySelector('#pedidos-list');
-    const pagEl = container.querySelector('#paginacao');
-    const status = container.querySelector('#filtro-status').value;
+  _currentPage = page;
+  const listaEl = container.querySelector('#pedidos-list');
+  const pagEl = container.querySelector('#paginacao');
+  const status = container.querySelector('#filtro-status').value;
 
-    listaEl.innerHTML = '<div class="content-loading"><div class="spinner"></div></div>';
-    pagEl.classList.add('hidden');
+  listaEl.innerHTML = '<div class="content-loading"><div class="spinner"></div></div>';
+  pagEl.classList.add('hidden');
 
-    try {
-        const params = new URLSearchParams({ page, limit: 8 });
-        if (status) params.set('status', status);
+  try {
+    const params = new URLSearchParams({ page, limit: 8 });
+    if (status) params.set('status', status);
 
-        const res = await fetch(`/api/pedidos?${params}`, { credentials: 'include' });
-        if (!res.ok) throw new Error(res.status);
+    const res = await fetch(`/api/pedidos?${params}`, { credentials: 'include' });
+    if (!res.ok) throw new Error(res.status);
 
-        const { pedidos, paginacao } = await res.json();
+    const { pedidos, paginacao } = await res.json();
 
-        if (!pedidos.length) {
-            listaEl.innerHTML = `
+    if (!pedidos.length) {
+      listaEl.innerHTML = `
         <div class="section-empty">
           <h2>Nenhum pedido encontrado</h2>
           <p>${status ? 'Tente remover o filtro de status.' : 'Você ainda não fez nenhum pedido.'}</p>
         </div>`;
-            return;
-        }
-
-        listaEl.innerHTML = pedidos.map(p => renderPedidoCard(p)).join('');
-
-        // Paginação
-        if (paginacao.totalPaginas > 1) {
-            pagEl.classList.remove('hidden');
-            pagEl.innerHTML = renderPaginacao(paginacao);
-            pagEl.querySelectorAll('.btn-pag[data-page]').forEach(btn => {
-                btn.addEventListener('click', () => carregarPedidos(container, ctx, Number(btn.dataset.page)));
-            });
-        }
-
-        // Botões cancelar
-        listaEl.querySelectorAll('.btn-cancelar[data-codigo]').forEach(btn => {
-            btn.addEventListener('click', () => cancelarPedido(btn.dataset.codigo, container, ctx));
-        });
-
-    } catch {
-        listaEl.innerHTML = '<div class="section-error"><h2>Erro ao carregar pedidos</h2><p>Verifique sua conexão e tente novamente.</p></div>';
+      return;
     }
+
+    listaEl.innerHTML = pedidos.map(p => renderPedidoCard(p)).join('');
+
+    // Paginação
+    if (paginacao.totalPaginas > 1) {
+      pagEl.classList.remove('hidden');
+      pagEl.innerHTML = renderPaginacao(paginacao);
+      pagEl.querySelectorAll('.btn-pag[data-page]').forEach(btn => {
+        btn.addEventListener('click', () => carregarPedidos(container, ctx, Number(btn.dataset.page)));
+      });
+    }
+
+    // Botões cancelar
+    listaEl.querySelectorAll('.btn-cancelar[data-codigo]').forEach(btn => {
+      btn.addEventListener('click', () => cancelarPedido(btn.dataset.codigo, container, ctx));
+    });
+
+  } catch {
+    listaEl.innerHTML = '<div class="section-error"><h2>Erro ao carregar pedidos</h2><p>Verifique sua conexão e tente novamente.</p></div>';
+  }
 }
 
 function renderPedidoCard(p) {
-    const itensTxt = p.itens.map(i => `${i.quantidade}x ${i.nome}`).join(', ');
-    const data = new Date(p.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
-    const total = p.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    const statusLabel = {
-        pendente: '⏳ Pendente', confirmado: '✅ Confirmado',
-        preparando: '👨‍🍳 Preparando', saiu_entrega: '🚚 Em entrega',
-        entregue: '✔️ Entregue', cancelado: '❌ Cancelado',
-    }[p.status] || p.status;
+  const itensTxt = p.itens.map(i => `${esc(String(i.quantidade))}x ${esc(i.nome)}`).join(', ');
+  const data = new Date(p.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+  const total = p.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const statusLabel = {
+    pendente: '⏳ Pendente', confirmado: '✅ Confirmado',
+    preparando: '👨‍🍳 Preparando', saiu_entrega: '🚚 Em entrega',
+    entregue: '✔️ Entregue', cancelado: '❌ Cancelado',
+  }[p.status] || esc(p.status);
 
-    const podeCancelar = ['pendente', 'confirmado'].includes(p.status);
+  const podeCancelar = ['pendente', 'confirmado'].includes(p.status);
 
-    return `
-    <article class="pedido-card" aria-label="Pedido ${p.codigo}">
+  return `
+    <article class="pedido-card" aria-label="Pedido ${esc(p.codigo)}">
       <div class="pedido-header">
         <div>
-          <p class="pedido-codigo">${p.codigo}</p>
-          <p class="pedido-comercio">${p.comercio?.emoji || '🏪'} ${p.comercio?.nome || 'Loja'}</p>
+          <p class="pedido-codigo">${esc(p.codigo)}</p>
+          <p class="pedido-comercio">${esc(p.comercio?.emoji) || '🏪'} ${esc(p.comercio?.nome) || 'Loja'}</p>
         </div>
-        <span class="pedido-status status-${p.status}">${statusLabel}</span>
+        <span class="pedido-status status-${esc(p.status)}">${statusLabel}</span>
       </div>
       <div class="pedido-body">
         <p class="pedido-itens">${itensTxt}</p>
@@ -159,47 +160,47 @@ function renderPedidoCard(p) {
             <p class="pedido-total">${total}</p>
             <p class="pedido-data">${data}</p>
           </div>
-          ${podeCancelar ? `<button class="btn-cancelar" data-codigo="${p.codigo}">Cancelar</button>` : ''}
+          ${podeCancelar ? `<button class="btn-cancelar" data-codigo="${esc(p.codigo)}">Cancelar</button>` : ''}
         </div>
       </div>
     </article>`;
 }
 
 function renderPaginacao(p) {
-    let btns = `<button class="btn-pag" data-page="${p.pagina - 1}" ${p.pagina <= 1 ? 'disabled' : ''}>‹ Anterior</button>`;
-    for (let i = 1; i <= p.totalPaginas; i++) {
-        btns += `<button class="btn-pag ${i === p.pagina ? 'active' : ''}" data-page="${i}">${i}</button>`;
-    }
-    btns += `<button class="btn-pag" data-page="${p.pagina + 1}" ${p.pagina >= p.totalPaginas ? 'disabled' : ''}>Próximo ›</button>`;
-    return btns;
+  let btns = `<button class="btn-pag" data-page="${p.pagina - 1}" ${p.pagina <= 1 ? 'disabled' : ''}>‹ Anterior</button>`;
+  for (let i = 1; i <= p.totalPaginas; i++) {
+    btns += `<button class="btn-pag ${i === p.pagina ? 'active' : ''}" data-page="${i}">${i}</button>`;
+  }
+  btns += `<button class="btn-pag" data-page="${p.pagina + 1}" ${p.pagina >= p.totalPaginas ? 'disabled' : ''}>Próximo ›</button>`;
+  return btns;
 }
 
 async function cancelarPedido(codigo, container, ctx) {
-    const motivo = prompt(`Cancelar pedido ${codigo}?\nInforme o motivo:`);
-    if (!motivo) return;
+  const motivo = prompt(`Cancelar pedido ${codigo}?\nInforme o motivo:`);
+  if (!motivo) return;
 
-    try {
-        const res = await fetch(`/api/pedidos/${codigo}/status`, {
-            method: 'PUT',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': ctx.csrfToken,
-            },
-            body: JSON.stringify({ status: 'cancelado', motivoCancelamento: motivo }),
-        });
-        if (res.ok) {
-            carregarPedidos(container, ctx, _currentPage);
-        } else {
-            const d = await res.json();
-            alert(d.error || 'Erro ao cancelar pedido');
-        }
-    } catch {
-        alert('Erro de rede. Tente novamente.');
+  try {
+    const res = await fetch(`/api/pedidos/${codigo}/status`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': ctx.csrfToken,
+      },
+      body: JSON.stringify({ status: 'cancelado', motivoCancelamento: motivo }),
+    });
+    if (res.ok) {
+      carregarPedidos(container, ctx, _currentPage);
+    } else {
+      const d = await res.json();
+      alert(d.error || 'Erro ao cancelar pedido');
     }
+  } catch {
+    alert('Erro de rede. Tente novamente.');
+  }
 }
 
 export function unmount() {
-    _cleanup.forEach(fn => fn());
-    _cleanup = [];
+  _cleanup.forEach(fn => fn());
+  _cleanup = [];
 }

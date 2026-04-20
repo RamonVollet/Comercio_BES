@@ -6,6 +6,11 @@ export const API_BASE = window.location.port === '3000'
   ? window.location.origin + '/api'
   : 'http://localhost:3000/api';
 
+// Em dev local, permite fallback para data/data.json quando API estiver offline.
+// Em ambientes remotos, evita mascarar problemas de integração.
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '']);
+export const ENABLE_DATA_FALLBACK = window.location.protocol === 'file:' || LOCAL_HOSTS.has(window.location.hostname);
+
 // ===== STORAGE KEYS =====
 export const KEYS = {
   SESSION:   'bes_sessao',

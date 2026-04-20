@@ -567,9 +567,18 @@
         <span class="erro-msg" id="l-loja-erro">Preencha o nome da sua loja.</span>
       </div>
       <div class="field">
+        <label for="l-cpfcnpj">CPF ou CNPJ do responsável</label>
+        <input type="text" id="l-cpfcnpj" placeholder="000.000.000-00 ou 00.000.000/0000-00" oninput="limparErro('l-cpfcnpj')">
+        <span class="erro-msg" id="l-cpfcnpj-erro">Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.</span>
+      </div>
+      <div class="field">
         <label for="l-whats">WhatsApp da loja</label>
         <input type="tel" id="l-whats" placeholder="5516999999999" oninput="limparErro('l-whats')">
         <span class="erro-msg" id="l-whats-erro">Preencha o WhatsApp da loja.</span>
+      </div>
+      <div class="field">
+        <label for="l-endereco">Endereço comercial (opcional)</label>
+        <input type="text" id="l-endereco" placeholder="Rua, número, bairro" oninput="limparErro('l-endereco')">
       </div>
 
       <button class="btn-submit lojista" onclick="cadastrarLojista()">Criar Conta Lojista →</button>
@@ -615,6 +624,15 @@
 
     function validarEmail(e) { return e.includes('@') && e.includes('.'); }
 
+    function apenasDigitos(v) {
+      return String(v || '').replace(/\D/g, '');
+    }
+
+    function validarCpfCnpj(v) {
+      const n = apenasDigitos(v);
+      return n.length === 11 || n.length === 14;
+    }
+
     function cadastrarCliente() {
       let ok = true;
       const nome = document.getElementById('c-nome').value.trim();
@@ -648,18 +666,26 @@
       const tel = document.getElementById('l-tel').value.trim();
       const senha = document.getElementById('l-senha').value;
       const loja = document.getElementById('l-loja').value.trim();
+      const cpfCnpj = document.getElementById('l-cpfcnpj').value.trim();
       const whats = document.getElementById('l-whats').value.trim();
+      const enderecoComercial = document.getElementById('l-endereco').value.trim();
 
       if (!nome) { mostrarErro('l-nome', 'Preencha seu nome completo.'); ok = false; }
       if (!email || !validarEmail(email)) { mostrarErro('l-email', 'Preencha um e-mail válido.'); ok = false; }
       if (!tel) { mostrarErro('l-tel', 'Preencha seu telefone.'); ok = false; }
       if (senha.length < 6) { mostrarErro('l-senha', 'Senha deve ter ao menos 6 caracteres.'); ok = false; }
       if (!loja) { mostrarErro('l-loja', 'Preencha o nome da sua loja.'); ok = false; }
+      if (!validarCpfCnpj(cpfCnpj)) { mostrarErro('l-cpfcnpj', 'Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.'); ok = false; }
       if (!whats) { mostrarErro('l-whats', 'Preencha o WhatsApp da loja.'); ok = false; }
 
       if (!ok) return;
 
-      Auth.register(nome, email, tel, senha, 'lojista', { nome: loja, whatsapp: whats }).then(res => {
+      Auth.register(nome, email, tel, senha, 'lojista', {
+        nomeFantasia: loja,
+        cpfCnpj: apenasDigitos(cpfCnpj),
+        telefoneComercial: apenasDigitos(whats),
+        enderecoComercial: enderecoComercial || undefined
+      }).then(res => {
         if (!res.ok) {
           mostrarErro('l-email', res.msg || 'Erro ao registrar.');
           return;

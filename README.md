@@ -186,7 +186,7 @@ Acesse **[http://localhost:3000](http://localhost:3000)** no navegador.
 
 ### Hostinger Business — Node.js gerenciado
 
-1. **Frontend:** suba os arquivos estáticos (`index.html`, `css/`, `js/`, `data/`, etc.) via hPanel
+1. **Frontend:** suba os arquivos estáticos (`index.html`, `minha-conta/`, `css/`, `js/`, `data/`, etc.) via hPanel
 2. **Backend:** crie uma aplicação Node.js gerenciada no hPanel apontando para `backend/`
 3. Configure as variáveis de ambiente no painel (JWT_SECRET, DATABASE_URL, etc.)
 4. O backend será acessível em um subdomínio — atualize `FRONTEND_URL` no `.env` com a URL do frontend

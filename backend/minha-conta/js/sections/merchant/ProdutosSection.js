@@ -1,13 +1,14 @@
 // =====================================================
 // ProdutosSection.js — Gerenciamento do catálogo da loja
 // =====================================================
+import { esc } from '../../utils.js';
 
 let _cleanup = [];
 
 export function mount(container, ctx) {
-    _cleanup = [];
+  _cleanup = [];
 
-    container.innerHTML = `
+  container.innerHTML = `
     <section class="produtos-section">
       <div class="section-header-row">
         <div>
@@ -64,59 +65,60 @@ export function mount(container, ctx) {
     </style>
   `;
 
-    if (!ctx.activeStoreId) {
-        container.querySelector('#no-store-banner').classList.remove('hidden');
-        container.querySelector('#produtos-list').classList.add('hidden');
-        container.querySelector('#btn-novo-produto').disabled = true;
-        return;
-    }
+  if (!ctx.activeStoreId) {
+    container.querySelector('#no-store-banner').classList.remove('hidden');
+    container.querySelector('#produtos-list').classList.add('hidden');
+    container.querySelector('#btn-novo-produto').disabled = true;
+    return;
+  }
 
-    carregarProdutos(container, ctx);
+  carregarProdutos(container, ctx);
 
-    const btnNovo = container.querySelector('#btn-novo-produto');
-    const onNovo = () => mostrarFormulario(container, ctx, null);
-    btnNovo.addEventListener('click', onNovo);
-    _cleanup.push(() => btnNovo.removeEventListener('click', onNovo));
+  const btnNovo = container.querySelector('#btn-novo-produto');
+  const onNovo = () => mostrarFormulario(container, ctx, null);
+  btnNovo.addEventListener('click', onNovo);
+  _cleanup.push(() => btnNovo.removeEventListener('click', onNovo));
 
-    // Ouve evento global do header quando trocar a loja (se aplicável para recarregar sem hard reload)
-    // Mas o app.js dá trigger de hard reload (`navigate`) quando muda, então estamos OK.
+  // Ouve evento global do header quando trocar a loja (se aplicável para recarregar sem hard reload)
+  // Mas o app.js dá trigger de hard reload (`navigate`) quando muda, então estamos OK.
 }
 
 async function carregarProdutos(container, ctx) {
-    const el = container.querySelector('#produtos-list');
-    el.innerHTML = '<div class="content-loading"><div class="spinner"></div></div>';
+  const el = container.querySelector('#produtos-list');
+  el.innerHTML = '<div class="content-loading"><div class="spinner"></div></div>';
 
-    try {
-        const storeObj = ctx.stores.find(s => s.id === ctx.activeStoreId);
-        if (!storeObj) throw new Error('Loja não encontrada');
+  try {
+    const storeObj = ctx.stores.find(s => s.id === ctx.activeStoreId);
+    if (!storeObj) throw new Error('Loja não encontrada');
 
-        // Usa um slug ou API de listar produtos do comércio (reaproveitando modelo aberto do backend)
-        const res = await fetch(`/api/comercios/${storeObj.slug}`);
-        if (!res.ok) throw new Error();
-        const loja = await res.json();
+    // Usa um slug ou API de listar produtos do comércio (reaproveitando modelo aberto do backend)
+    const res = await fetch(`/api/comercios/${storeObj.slug}`);
+    if (!res.ok) throw new Error();
+    const loja = await res.json();
 
-        const catalogo = loja.catalogo || [];
+    const catalogo = loja.catalogo || [];
 
-        if (!catalogo.length) {
-            el.innerHTML = `<div class="section-empty"><h2>Sem produtos</h2><p>Comece adicionando produtos ao seu catálogo.</p></div>`;
-            return;
-        }
+    if (!catalogo.length) {
+      el.innerHTML = `<div class="section-empty"><h2>Sem produtos</h2><p>Comece adicionando produtos ao seu catálogo.</p></div>`;
+      return;
+    }
 
-        el.innerHTML = `
+    el.innerHTML = `
       <div class="produtos-grid">
         ${catalogo.map(p => `
           <div class="produto-card">
             <div>
               <div class="produto-header">
-                <h3 class="produto-nome">${p.nome_produto || p.nome}</h3>
+                <h3 class="produto-nome">${esc(p.nome_produto || p.nome)}</h3>
                 <span class="produto-status ${p.disponivel ? 'status-ativo' : 'status-inativo'}">${p.disponivel ? 'Ativo' : 'Inativo'}</span>
               </div>
-              <p class="produto-desc">${p.descricao || 'Sem descrição'}</p>
+              <p class="produto-desc">${esc(p.descricao) || 'Sem descrição'}</p>
             </div>
             <div class="produto-footer">
               <span class="produto-preco">${formatMoney(p.preco)}</span>
               <div class="produto-acoes">
-                <button class="btn-link btn-excluir" data-id="${p.id}" data-pid="${p.id}">Excluir</button>
+                <button class="btn-link btn-editar" data-id="${p.id}">Editar</button>
+                <button class="btn-link danger btn-excluir" data-id="${p.id}">Excluir</button>
               </div>
             </div>
           </div>
@@ -124,38 +126,52 @@ async function carregarProdutos(container, ctx) {
       </div>
     `;
 
-        // Deletar
-        el.querySelectorAll('.btn-excluir').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                if (!confirm('Excluir produto?')) return;
-                try {
-                    const res = await fetch(`/api/produtos/${btn.dataset.id}`, {
-                        method: 'DELETE',
-                        credentials: 'include',
-                        headers: { 'X-CSRF-Token': ctx.csrfToken }
-                    });
-                    if (res.ok) carregarProdutos(container, ctx);
-                    else alert('Erro ao excluir');
-                } catch { alert('Erro de rede'); }
-            });
-        });
+    // Editar
+    el.querySelectorAll('.btn-editar').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const produto = catalogo.find(p => String(p.id) === btn.dataset.id);
+        if (produto) mostrarFormulario(container, ctx, produto);
+      });
+    });
 
-    } catch {
-        el.innerHTML = '<div class="section-error"><h2>Erro ao carregar catálogo</h2></div>';
-    }
+    // Deletar
+    el.querySelectorAll('.btn-excluir').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Excluir produto?')) return;
+        try {
+          const res = await fetch(`/api/comercios/${storeObj.slug}/produtos/${btn.dataset.id}`, {
+            method: 'DELETE',
+            credentials: 'include',
+            headers: { 'X-CSRF-Token': ctx.csrfToken }
+          });
+          if (res.ok) carregarProdutos(container, ctx);
+          else alert('Erro ao excluir');
+        } catch { alert('Erro de rede'); }
+      });
+    });
+
+  } catch {
+    el.innerHTML = '<div class="section-error"><h2>Erro ao carregar catálogo</h2></div>';
+  }
 }
 
 function mostrarFormulario(container, ctx, produto) {
-    const formEl = container.querySelector('#produto-form-container');
-    formEl.classList.remove('hidden');
-    formEl.innerHTML = `
+  const formEl = container.querySelector('#produto-form-container');
+  const storeObj = ctx.stores.find(s => s.id === ctx.activeStoreId);
+  if (!storeObj) {
+    alert('Loja ativa não encontrada.');
+    return;
+  }
+
+  formEl.classList.remove('hidden');
+  formEl.innerHTML = `
     <div class="form-card">
       <h3>${produto ? 'Editar Produto' : 'Novo Produto'}</h3>
       <form id="form-produto">
         <div class="form-grid">
           <div class="form-group span2">
             <label>Nome do Produto *</label>
-            <input type="text" name="nome" required value="${produto ? produto.nome : ''}" />
+            <input type="text" name="nome" required value="${produto ? (produto.nome_produto || produto.nome || '') : ''}" />
           </div>
           <div class="form-group span2">
             <label>Descrição</label>
@@ -181,49 +197,48 @@ function mostrarFormulario(container, ctx, produto) {
     </div>
   `;
 
-    formEl.querySelector('#btn-cancelar-produto').addEventListener('click', () => {
+  formEl.querySelector('#btn-cancelar-produto').addEventListener('click', () => {
+    formEl.classList.add('hidden');
+    formEl.innerHTML = '';
+  });
+
+  formEl.querySelector('#form-produto').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.target;
+    const body = {
+      nome: f.nome.value,
+      descricao: f.descricao.value,
+      preco: parseFloat(f.preco.value),
+      disponivel: f.disponivel.value === 'true'
+    };
+
+    try {
+      const url = produto
+        ? `/api/comercios/${storeObj.slug}/produtos/${produto.id}`
+        : `/api/comercios/${storeObj.slug}/produtos`;
+      const method = produto ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method, credentials: 'include',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': ctx.csrfToken },
+        body: JSON.stringify(body)
+      });
+      if (res.ok) {
         formEl.classList.add('hidden');
         formEl.innerHTML = '';
-    });
-
-    formEl.querySelector('#form-produto').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const f = e.target;
-        // Precisaria da Rota /api/produtos POST/PUT - Assumindo que a Rota original funciona (comercioId atrelado)
-        // No projeto antigo era POST /api/produtos {comercioId, nome, preco, descricao}
-        const body = {
-            comercioId: ctx.activeStoreId,
-            nome: f.nome.value,
-            descricao: f.descricao.value,
-            preco: parseFloat(f.preco.value),
-            disponivel: f.disponivel.value === 'true'
-        };
-
-        try {
-            const url = produto ? `/api/produtos/${produto.id}` : '/api/produtos';
-            const method = produto ? 'PUT' : 'POST';
-            const res = await fetch(url, {
-                method, credentials: 'include',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': ctx.csrfToken },
-                body: JSON.stringify(body)
-            });
-            if (res.ok) {
-                formEl.classList.add('hidden');
-                formEl.innerHTML = '';
-                carregarProdutos(container, ctx);
-            } else {
-                const d = await res.json();
-                alert(d.error || 'Erro ao salvar produto');
-            }
-        } catch { alert('Erro de rede'); }
-    });
+        carregarProdutos(container, ctx);
+      } else {
+        const d = await res.json();
+        alert(d.error || 'Erro ao salvar produto');
+      }
+    } catch { alert('Erro de rede'); }
+  });
 }
 
 function formatMoney(val) {
-    return Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 export function unmount() {
-    _cleanup.forEach(fn => fn());
-    _cleanup = [];
+  _cleanup.forEach(fn => fn());
+  _cleanup = [];
 }

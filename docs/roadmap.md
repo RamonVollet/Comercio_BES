@@ -142,6 +142,18 @@ Auditoria completa de segurança com **43 vulnerabilidades identificadas e corri
 - [ ] **Delivery tracking** (muito longo prazo)
   - Status do pedido em tempo real
   - Integração com motoboy
+- [x] **Fotos reais nas lojas**
+  - Modal renderiza `<img>` com lazy load (URLs) ou emoji (placeholder)
+  - Lightbox para ver em fullscreen com navegação prev/next
+  - Pasta `images/lojas/[slug]/` para armazenamento local
+  - Migração para Cloudinary/Supabase Storage planejada para quando houver tráfego
+- [x] **Mapa embed no modal da loja**
+  - OpenStreetMap por padrão (gratuito, sem API key)
+  - Google Maps Embed API opcional via `GOOGLE_MAPS_KEY` em `js/config.js`
+- [ ] **Cadastro de lojas reais**
+  - Processo e checklist em `docs/plano-cadastro.md`
+  - Primeira loja real: Aquaflora (em andamento)
+- [ ] **Google Maps Embed API** — configurar key para produção
 
 ---
 
@@ -194,25 +206,6 @@ Auditoria completa de segurança com **43 vulnerabilidades identificadas e corri
 | Comerciantes premium | 5+ |
 
 ---
-
----
-
-## Fase 4 — Marketplace (continuação)
-
-> Status: **Em andamento**
-
-- [x] **Fotos reais nas lojas**
-  - Modal renderiza `<img>` com lazy load (URLs) ou emoji (placeholder)
-  - Lightbox para ver em fullscreen com navegação prev/next
-  - Pasta `images/lojas/[slug]/` para armazenamento local
-  - Migração para Cloudinary/Supabase Storage planejada para quando houver tráfego
-- [x] **Mapa embed no modal da loja**
-  - OpenStreetMap por padrão (gratuito, sem API key)
-  - Google Maps Embed API opcional via `GOOGLE_MAPS_KEY` em `js/config.js`
-- [ ] **Cadastro de lojas reais**
-  - Processo e checklist em `docs/plano-cadastro.md`
-  - Primeira loja real: Aquaflora (em andamento)
-- [ ] **Google Maps Embed API** — configurar key para produção
 
 ---
 

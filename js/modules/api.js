@@ -26,6 +26,7 @@ export async function enviarAvaliacaoApi(slug, nota, comentario, token) {
 
   const res = await fetch(API_BASE + '/avaliacoes/' + slug, {
     method: 'POST',
+    credentials: 'include',
     headers,
     body: JSON.stringify({ nota, comentario: comentario || undefined })
   });

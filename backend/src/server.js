@@ -160,6 +160,7 @@ app.use('/uploads', (req, res, next) => {
 
 // --- Rotas da API ---
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', require('./routes/admin'));
 app.use('/api/comercios', comerciosRoutes);
 app.use('/api/categorias', categoriasRoutes);
 app.use('/api/avaliacoes', avaliacoesRoutes);

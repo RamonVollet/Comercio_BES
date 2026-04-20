@@ -1,13 +1,14 @@
 // =====================================================
 // EstoqueSection.js — Gerenciamento rápido de estoque
 // =====================================================
+import { esc } from '../../utils.js';
 
 let _cleanup = [];
 
 export function mount(container, ctx) {
-    _cleanup = [];
+  _cleanup = [];
 
-    container.innerHTML = `
+  container.innerHTML = `
     <section class="estoque-section">
       <div class="section-header-row">
         <div>
@@ -46,34 +47,35 @@ export function mount(container, ctx) {
     </style>
   `;
 
-    if (!ctx.activeStoreId) {
-        container.querySelector('#no-store-banner').classList.remove('hidden');
-        container.querySelector('#estoque-list').classList.add('hidden');
-        return;
-    }
+  if (!ctx.activeStoreId) {
+    container.querySelector('#no-store-banner').classList.remove('hidden');
+    container.querySelector('#estoque-list').classList.add('hidden');
+    return;
+  }
 
-    carregarEstoque(container, ctx);
+  carregarEstoque(container, ctx);
 }
 
 async function carregarEstoque(container, ctx) {
-    const el = container.querySelector('#estoque-list');
-    try {
-        const storeObj = ctx.stores.find(s => s.id === ctx.activeStoreId);
-        const res = await fetch(`/api/comercios/${storeObj.slug}`);
-        if (!res.ok) throw new Error();
-        const loja = await res.json();
+  const el = container.querySelector('#estoque-list');
+  try {
+    const storeObj = ctx.stores.find(s => s.id === ctx.activeStoreId);
+    if (!storeObj) throw new Error('Loja não encontrada');
+    const res = await fetch(`/api/comercios/${storeObj.slug}`);
+    if (!res.ok) throw new Error();
+    const loja = await res.json();
 
-        const catalogo = loja.catalogo || [];
+    const catalogo = loja.catalogo || [];
 
-        if (!catalogo.length) {
-            el.innerHTML = `<div class="section-empty"><h2>Sem produtos</h2><p>Adicione produtos primeiro na aba Produtos.</p></div>`;
-            return;
-        }
+    if (!catalogo.length) {
+      el.innerHTML = `<div class="section-empty"><h2>Sem produtos</h2><p>Adicione produtos primeiro na aba Produtos.</p></div>`;
+      return;
+    }
 
-        el.innerHTML = catalogo.map(p => `
+    el.innerHTML = catalogo.map(p => `
       <div class="estoque-item">
         <div>
-          <p class="prod-nome">${p.nome_produto || p.nome}</p>
+          <p class="prod-nome">${esc(p.nome_produto || p.nome)}</p>
           <p class="prod-preco">R$ ${p.preco.toFixed(2).replace('.', ',')}</p>
         </div>
         <label class="switch" title="Ativar/Desativar produto">
@@ -83,27 +85,26 @@ async function carregarEstoque(container, ctx) {
       </div>
     `).join('');
 
-        el.querySelectorAll('.toggle-disponivel').forEach(chk => {
-            chk.addEventListener('change', async (e) => {
-                const id = e.target.dataset.id;
-                const disponivel = e.target.checked;
-                try {
-                    // Utiliza mesma rota de PUT de produtos do legado
-                    await fetch(`/api/produtos/${id}`, {
-                        method: 'PUT', credentials: 'include',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': ctx.csrfToken },
-                        body: JSON.stringify({ disponivel })
-                    });
-                } catch { alert('Erro de rede ao salvar alteração'); }
-            });
-        });
+    el.querySelectorAll('.toggle-disponivel').forEach(chk => {
+      chk.addEventListener('change', async (e) => {
+        const id = e.target.dataset.id;
+        const disponivel = e.target.checked;
+        try {
+          await fetch(`/api/comercios/${storeObj.slug}/produtos/${id}`, {
+            method: 'PUT', credentials: 'include',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': ctx.csrfToken },
+            body: JSON.stringify({ disponivel })
+          });
+        } catch { alert('Erro de rede ao salvar alteração'); }
+      });
+    });
 
-    } catch {
-        el.innerHTML = '<div class="section-error"><h2>Erro ao carregar estoque</h2></div>';
-    }
+  } catch {
+    el.innerHTML = '<div class="section-error"><h2>Erro ao carregar estoque</h2></div>';
+  }
 }
 
 export function unmount() {
-    _cleanup.forEach(fn => fn());
-    _cleanup = [];
+  _cleanup.forEach(fn => fn());
+  _cleanup = [];
 }
