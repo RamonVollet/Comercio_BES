@@ -2,9 +2,14 @@
 // Primeiro módulo carregado. Sem dependências.
 
 // ===== API =====
-export const API_BASE = window.location.port === '3000'
-  ? window.location.origin + '/api'
-  : 'http://localhost:3000/api';
+const PROD_HOSTS = new Set(['comerciobes.com.br', 'www.comerciobes.com.br']);
+const IS_PROD_HOST = PROD_HOSTS.has(window.location.hostname);
+
+export const API_BASE = IS_PROD_HOST
+  ? 'https://api.comerciobes.com.br/api'
+  : (window.location.port === '3000'
+      ? window.location.origin + '/api'
+      : 'http://localhost:3000/api');
 
 // Em dev local, permite fallback para data/data.json quando API estiver offline.
 // Em ambientes remotos, evita mascarar problemas de integração.
