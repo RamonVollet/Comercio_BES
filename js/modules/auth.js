@@ -79,6 +79,10 @@ export const Auth = {
   },
 
   logout() {
+    fetch(API_BASE + '/auth/logout', {
+      method: 'POST',
+      credentials: 'include'
+    }).catch(err => console.warn('[Auth] API logout falhou:', err.message));
     localStorage.removeItem(KEYS.SESSION);
     localStorage.removeItem(KEYS.API_TOKEN);
   }

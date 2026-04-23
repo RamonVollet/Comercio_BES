@@ -73,16 +73,33 @@ app.use((req, res, next) => {
 });
 
 // CORS
+const envAllowedOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map(u => u.trim())
+  .filter(Boolean);
+
+const defaultProductionOrigins = [
+  'https://comerciobes.com.br',
+  'https://www.comerciobes.com.br',
+  'https://api.comerciobes.com.br'
+];
+
 const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? (process.env.FRONTEND_URL || '').split(',').map(u => u.trim()).filter(Boolean)
+  ? Array.from(new Set([...defaultProductionOrigins, ...envAllowedOrigins]))
   : ['http://localhost:3000', 'http://localhost:5500', 'http://127.0.0.1:5500', 'http://localhost:8080'];
+
+if (process.env.NODE_ENV === 'production' && envAllowedOrigins.length === 0) {
+  console.warn('[CORS] FRONTEND_URL nao configurado. Usando allowlist padrao do dominio oficial.');
+}
 
 app.use(cors({
   origin: function (origin, callback) {
     // Permitir requests sem origin (curl, mobile apps, etc.)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error('Bloqueado pelo CORS'));
+    const corsError = new Error('Bloqueado pelo CORS');
+    corsError.statusCode = 403;
+    callback(corsError);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
