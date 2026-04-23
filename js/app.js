@@ -38,6 +38,7 @@ import {
   trocarTipoConta, atualizarNavUser,
   toggleContaMenu, fecharContaMenu
 } from './modules/auth-ui.js';
+import { Auth } from './modules/auth.js';
 import {
   abrirCheckout, fecharCheckout,
   confirmarPedido, confirmarPedidoWhatsApp, enviarTudoWhatsApp
@@ -53,6 +54,7 @@ import {
 // Tudo aqui é chamado de strings HTML geradas dinamicamente ou de atributos onclick no HTML estático.
 
 Object.assign(window, {
+  Auth,
   // Navegação / menus
   toggleDarkMode, toggleMobileMenu, fecharMobileMenu,
   toggleContaMenu, fecharContaMenu,
@@ -89,6 +91,7 @@ Object.assign(window, {
 
   // API (usado em popups do mapa e cards gerados)
   registrarEstatistica,
+  mostrarToast,
 
   // Paginação
   irPagina,
