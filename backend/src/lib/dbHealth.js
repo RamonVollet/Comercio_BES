@@ -28,7 +28,7 @@ function withTimeout(promise, timeoutMs) {
 }
 
 function publicDatabaseError(err) {
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production' && process.env.DB_SHOW_ERRORS !== 'true') {
     return 'Banco de dados indisponivel. Verifique DATABASE_URL e conectividade.';
   }
 

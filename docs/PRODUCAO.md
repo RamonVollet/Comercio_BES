@@ -49,6 +49,14 @@ PRISMA_CLIENT_ENGINE_TYPE=binary
 
 Nao defina `PORT` manualmente na Hostinger. Deixe a plataforma injetar a porta.
 
+Durante diagnostico de banco, adicione temporariamente:
+
+```env
+DB_SHOW_ERRORS=true
+```
+
+Remova depois que `/api/health` estiver `reachable`.
+
 ## Supabase
 
 No ambiente local, com `.env` correto:
