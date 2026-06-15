@@ -8,6 +8,12 @@ const publicRoot = path.join(backendRoot, 'public');
 const files = ['index.html', 'manifest.json', 'sw.js'];
 const directories = ['css', 'js', 'html', 'icons', 'images', 'data'];
 
+if (!fs.existsSync(path.join(projectRoot, 'index.html'))) {
+  console.error(`Frontend index.html not found at ${projectRoot}`);
+  console.error('Deploy the repository root, not only the backend directory.');
+  process.exit(1);
+}
+
 function copyFileIfExists(file) {
   const source = path.join(projectRoot, file);
   if (!fs.existsSync(source)) return;
