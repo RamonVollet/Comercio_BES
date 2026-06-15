@@ -24,6 +24,8 @@ const pedidosRoutes = require('./routes/pedidos');
 const pagamentosRoutes = require('./routes/pagamentos');
 
 const app = express();
+app.set('trust proxy', 1);
+
 const PORT = process.env.PORT || 3000;
 const PROJECT_ROOT = path.join(__dirname, '..', '..');
 const BACKEND_ROOT = path.join(__dirname, '..');
