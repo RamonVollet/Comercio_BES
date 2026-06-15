@@ -73,6 +73,18 @@ PRISMA_CLIENT_ENGINE_TYPE=binary
 
 Nao defina `PORT` manualmente na Hostinger.
 
+Fallback temporario para ver menus sem banco:
+
+```env
+AUTH_FALLBACK_ENABLED=true
+```
+
+Credenciais demo:
+
+- Admin: `admin@comerciobes.com` / `admin123`
+- Lojista: `lojista@comerciobes.com` / `lojista123`
+- Alias lojista: `comerciante@demo.com` / `demo123`
+
 ## Diagnostico
 
 `/api` deve responder JSON da API.

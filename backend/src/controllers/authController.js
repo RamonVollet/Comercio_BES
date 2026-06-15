@@ -8,6 +8,11 @@ const prisma = require('../lib/prisma');
 const sanitize = require('../lib/sanitize');
 const { getCapabilities } = require('../rbac/capabilities');
 const {
+  findFallbackUserByCredentials,
+  findFallbackUserById,
+  publicUser,
+} = require('../lib/fallbackAuth');
+const {
   generateCsrfToken,
   generateRefreshToken,
   setAuthCookies,
@@ -34,8 +39,33 @@ function gerarAccessToken(user, extra = {}) {
   return jwt.sign(
     { id: user.id, email: user.email, tipo: user.tipo, ...extra },
     secret,
-    { expiresIn: '15m', algorithm: 'HS256' }
+    { expiresIn: '7d', algorithm: 'HS256' }
   );
+}
+
+function fallbackMePayload(user, req, res) {
+  const capabilities = getCapabilities(user.tipo);
+  const stores = user.tipo === 'comerciante' ? (user.stores || []) : [];
+  const activeStoreId = req.user?.activeStoreId || (stores[0]?.id ?? null);
+  const csrfToken = generateCsrfToken();
+  setCsrfCookie(res, csrfToken);
+
+  return {
+    user: { id: user.id, email: user.email, nome: user.nome, role: user.tipo, fallbackAuth: true },
+    capabilities,
+    stores,
+    activeStoreId,
+    csrfToken,
+    fallbackAuth: true,
+  };
+}
+
+function issueFallbackSession(res, user, extra = {}) {
+  const accessToken = gerarAccessToken(user, { fallbackAuth: true, ...extra });
+  const refreshToken = generateRefreshToken();
+  const csrfToken = generateCsrfToken();
+  setAuthCookies(res, accessToken, refreshToken, csrfToken);
+  return accessToken;
 }
 
 function limparDocumento(doc) {
@@ -135,6 +165,17 @@ async function login(req, res, next) {
     const { email, senha } = req.body;
     if (!email || !senha) return res.status(400).json({ error: 'Email e senha sao obrigatorios' });
 
+    const fallbackUser = findFallbackUserByCredentials(email, senha);
+    if (fallbackUser) {
+      const accessToken = issueFallbackSession(res, fallbackUser);
+      return res.json({
+        message: 'Login demo realizado com sucesso',
+        user: publicUser(fallbackUser),
+        token: accessToken,
+        fallbackAuth: true
+      });
+    }
+
     const user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
     if (!user) return res.status(401).json({ error: 'Email ou senha incorretos' });
 
@@ -169,6 +210,12 @@ async function login(req, res, next) {
 // ---------------------------------------------------------------------------
 async function me(req, res, next) {
   try {
+    if (req.user?.fallbackAuth) {
+      const fallbackUser = findFallbackUserById(req.userId);
+      if (!fallbackUser) return res.status(401).json({ error: 'unauthenticated' });
+      return res.json(fallbackMePayload(fallbackUser, req, res));
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: req.userId },
       select: {
@@ -259,17 +306,19 @@ async function logout(req, res, next) {
   try {
     const token = req.cookies?.access_token;
     let userId = req.userId;
+    let fallbackAuth = req.user?.fallbackAuth;
 
     if (!userId && token) {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
         userId = decoded.id;
+        fallbackAuth = decoded.fallbackAuth;
       } catch {
         userId = null;
       }
     }
 
-    if (userId) {
+    if (userId && !fallbackAuth) {
       await prisma.user.update({
         where: { id: userId },
         data: { refreshTokenHash: null },
@@ -300,6 +349,14 @@ async function activeStore(req, res, next) {
     const { storeId } = req.body;
     if (!storeId) return res.status(400).json({ error: 'storeId e obrigatorio' });
 
+    if (req.user?.fallbackAuth) {
+      const fallbackUser = findFallbackUserById(req.userId);
+      const store = fallbackUser?.stores?.find(s => s.id === Number(storeId));
+      if (!store) return res.status(403).json({ error: 'Loja nao encontrada ou sem permissao' });
+      issueFallbackSession(res, fallbackUser, { activeStoreId: store.id });
+      return res.json({ message: 'Loja ativa atualizada', activeStoreId: store.id, storeName: store.nome, fallbackAuth: true });
+    }
+
     // Verifica ownership
     const store = await prisma.comercio.findFirst({
       where: { id: Number(storeId), ownerId: req.userId },
@@ -329,6 +386,17 @@ async function activeStore(req, res, next) {
 // ---------------------------------------------------------------------------
 async function perfil(req, res, next) {
   try {
+    if (req.user?.fallbackAuth) {
+      const fallbackUser = findFallbackUserById(req.userId);
+      if (!fallbackUser) return res.status(404).json({ error: 'Usuario nao encontrado' });
+      return res.json({
+        ...publicUser(fallbackUser),
+        comercios: fallbackUser.stores || [],
+        enderecos: [],
+        pedidos: [],
+      });
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: req.userId },
       select: {
@@ -359,6 +427,14 @@ async function perfil(req, res, next) {
 // ---------------------------------------------------------------------------
 async function atualizarPerfil(req, res, next) {
   try {
+    if (req.user?.fallbackAuth) {
+      const fallbackUser = findFallbackUserById(req.userId);
+      return res.json({
+        message: 'Perfil demo nao e persistido',
+        user: publicUser(fallbackUser)
+      });
+    }
+
     const { nome, telefone, avatar, senhaAtual, novaSenha } = req.body;
     const data = {};
 

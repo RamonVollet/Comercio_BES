@@ -57,6 +57,22 @@ DB_SHOW_ERRORS=true
 
 Remova depois que `/api/health` estiver `reachable`.
 
+Para visualizar menus do painel enquanto o banco nao conecta, adicione temporariamente:
+
+```env
+AUTH_FALLBACK_ENABLED=true
+```
+
+Credenciais demo:
+
+```txt
+Admin: admin@comerciobes.com / admin123
+Lojista: lojista@comerciobes.com / lojista123
+Alias lojista: comerciante@demo.com / demo123
+```
+
+Remova `AUTH_FALLBACK_ENABLED` antes de abrir o site ao publico.
+
 ## Supabase
 
 No ambiente local, com `.env` correto:
