@@ -10,7 +10,7 @@ const configuredApiBase = window.BES_API_BASE;
 export const API_BASE = configuredApiBase
   ? configuredApiBase.replace(/\/$/, '')
   : IS_PROD_HOST
-    ? 'https://api.comerciobes.com.br/api'
+    ? window.location.origin + '/api'
     : (window.location.port === '3000'
         ? window.location.origin + '/api'
         : 'http://localhost:3000/api');
