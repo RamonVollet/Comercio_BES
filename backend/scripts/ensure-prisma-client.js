@@ -1,4 +1,5 @@
 const { spawnSync } = require('child_process');
+require('../src/lib/loadEnv')();
 
 function isPrismaClientReady() {
   try {

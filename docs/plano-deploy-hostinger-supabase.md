@@ -53,11 +53,12 @@ Recomendada para lançar.
 Configuração:
 
 ```txt
-Root/repository: raiz do repo
-Install: cd backend && npm ci
-Build: cd backend && npm run build
-Start: cd backend && npm start
-Entry: backend/src/server.js
+Branch: main
+Diretorio raiz: backend
+Install: npm ci
+Build: npm run build
+Start: npm start
+Entry: src/server.js
 Node: 20 ou 22
 ```
 
@@ -107,7 +108,41 @@ Pelo hPanel:
 7. Configurar env vars.
 8. Deploy.
 
+As variaveis ficam centralizadas no `.env` da raiz do projeto em desenvolvimento. Na Hostinger, use **Importar .env** ou cadastre os mesmos pares chave/valor manualmente no painel. Em producao, o app deve depender das variaveis do painel, nao de um arquivo com segredos versionado.
+
 Para sites estáticos, a Hostinger também tem Git em Advanced -> Git; para Node.js, use o fluxo de Node.js Apps.
+
+## GitHub Actions
+
+O repositório tem `.github/workflows/ci-deploy.yml`.
+
+Ele faz:
+
+- Em `push` e `pull_request`: instala dependências do backend e gera Prisma Client.
+- Roda testes somente quando `TEST_DATABASE_URL` estiver configurado nos secrets.
+- Em `main`: tenta deploy por SSH somente se os secrets da Hostinger existirem.
+
+Secrets esperados:
+
+- `TEST_DATABASE_URL`
+- `HOSTINGER_SSH_HOST`
+- `HOSTINGER_SSH_USER`
+- `HOSTINGER_SSH_KEY`
+- `HOSTINGER_SSH_PORT`
+- `HOSTINGER_APP_PATH`
+
+Se a integração GitHub nativa da Hostinger estiver funcionando bem, use ela e mantenha o Actions como CI. Se quiser deploy controlado pelo GitHub Actions, configure os secrets SSH acima.
+
+## Homologação privada
+
+Para deixar `comerciobes.com.br` privado durante testes, defina no ambiente da Hostinger:
+
+```env
+SITE_USERNAME=comerciobes
+SITE_PASSWORD=uma-senha-forte
+```
+
+Enquanto `SITE_PASSWORD` existir, o navegador pede usuário/senha antes de abrir o site. Remova `SITE_PASSWORD` no lançamento público.
 
 Referências:
 

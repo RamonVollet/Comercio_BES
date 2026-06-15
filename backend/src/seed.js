@@ -3,7 +3,7 @@
 // ===========================================
 // Uso: node src/seed.js
 
-require('dotenv').config();
+require('./lib/loadEnv')();
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const fs = require('fs');

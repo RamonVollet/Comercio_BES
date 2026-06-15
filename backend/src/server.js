@@ -1,7 +1,7 @@
 // ===========================================
 // Comercio BES - Servidor Express
 // ===========================================
-require('dotenv').config();
+require('./lib/loadEnv')();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -25,6 +25,30 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const PROJECT_ROOT = path.join(__dirname, '..', '..');
 const BACKEND_ROOT = path.join(__dirname, '..');
+const SITE_USERNAME = process.env.SITE_USERNAME || 'comerciobes';
+const SITE_PASSWORD = process.env.SITE_PASSWORD || '';
+
+function privateSiteGate(req, res, next) {
+  if (!SITE_PASSWORD || process.env.NODE_ENV === 'test') return next();
+  if (req.path === '/api/pagamentos/webhook') return next();
+
+  const header = req.headers.authorization || '';
+  const [scheme, encoded] = header.split(' ');
+
+  if (scheme === 'Basic' && encoded) {
+    const decoded = Buffer.from(encoded, 'base64').toString('utf8');
+    const separatorIndex = decoded.indexOf(':');
+    const username = decoded.slice(0, separatorIndex);
+    const password = decoded.slice(separatorIndex + 1);
+
+    if (username === SITE_USERNAME && password === SITE_PASSWORD) {
+      return next();
+    }
+  }
+
+  res.setHeader('WWW-Authenticate', 'Basic realm="Comercio BES homologacao", charset="UTF-8"');
+  return res.status(401).send('Acesso privado de homologacao.');
+}
 
 // --- Middleware Global ---
 
@@ -148,6 +172,9 @@ app.use(cookieParser());
 
 // Request logging
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+// Ambiente privado de homologacao. Defina SITE_PASSWORD para ativar.
+app.use(privateSiteGate);
 
 // --- Redirecionamento de rotas legadas ---
 app.use(['/admin', '/painel'], (req, res) => {

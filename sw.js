@@ -1,5 +1,5 @@
 // ===== SERVICE WORKER — Comércio BES =====
-const CACHE_NAME = 'comercio-bes-v7';
+const CACHE_NAME = 'comercio-bes-v8';
 const OFFLINE_ASSETS = [
   './',
   './index.html',

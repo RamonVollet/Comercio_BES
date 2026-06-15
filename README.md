@@ -60,7 +60,7 @@ npm test
 
 ## Variáveis de ambiente
 
-Copie `backend/.env.example` para `backend/.env` em desenvolvimento.
+Copie `.env.example` para `.env` na raiz do projeto em desenvolvimento.
 
 Obrigatórias:
 
@@ -68,6 +68,13 @@ Obrigatórias:
 - `TEST_DATABASE_URL` para rodar `npm test` com banco isolado
 - `JWT_SECRET`
 - `FRONTEND_URL` em produção
+
+Homologação privada:
+
+- `SITE_USERNAME`
+- `SITE_PASSWORD`
+
+Se `SITE_PASSWORD` estiver definido, o site exige senha por Basic Auth antes de abrir qualquer tela.
 
 Opcionais:
 
@@ -81,12 +88,15 @@ Recomendação atual: um app Node.js na Hostinger servindo frontend + API, com b
 Configuração sugerida no Hostinger Node.js App:
 
 - Framework/type: `Other` ou Express.js, se disponível
-- Repository/root: raiz do repositório
-- Install command: `cd backend && npm ci`
-- Build command: `cd backend && npm run build`
-- Start command: `cd backend && npm start`
-- Entry file: `backend/src/server.js`
+- Branch: `main`
+- Diretório raiz: `backend`
+- Install command: `npm ci`
+- Build command: `npm run build`
+- Start command: `npm start`
+- Entry file: `src/server.js`
 - Node.js: 20 ou 22
+
+No painel da Hostinger, importe o `.env` da raiz ou cadastre as mesmas variaveis manualmente. Em produção, o app usa as variáveis do painel; o arquivo `.env` local não deve ser enviado com segredos para o GitHub.
 
 Se separar frontend e API em domínios diferentes, defina antes de carregar `js/app.js`:
 

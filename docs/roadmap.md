@@ -8,8 +8,11 @@ Status: em andamento.
 
 - [x] Express servindo apenas assets públicos, sem expor raiz do repositório.
 - [x] Prisma alinhado com PostgreSQL.
-- [x] `.env.example` reduzido ao necessário.
+- [x] `.env.example` unico na raiz, reduzido ao necessario.
 - [x] `API_BASE` com suporte a override por `window.BES_API_BASE`.
+- [x] Roadmap público adicionado ao site.
+- [x] Homologação privada por `SITE_PASSWORD`.
+- [x] GitHub Actions com CI e deploy SSH opcional.
 - [ ] Conferir se nenhuma credencial real ficou no histórico remoto.
 - [ ] Rotacionar segredos se algum `.env` antigo já foi enviado ao GitHub.
 

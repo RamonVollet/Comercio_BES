@@ -2,14 +2,14 @@
 // Cria o schema do banco de testes via prisma db push
 const { execSync } = require('child_process');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
+require('../lib/loadEnv')();
 
 module.exports = async () => {
   const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 
   if (!testDatabaseUrl || !/^postgres(ql)?:\/\//.test(testDatabaseUrl)) {
     throw new Error(
-      'Defina TEST_DATABASE_URL (ou configure em backend/.env) com uma URL PostgreSQL isolada antes de rodar npm test.'
+      'Defina TEST_DATABASE_URL no .env da raiz com uma URL PostgreSQL isolada antes de rodar npm test.'
     );
   }
 
