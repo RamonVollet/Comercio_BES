@@ -9,6 +9,7 @@
     "dev": "nodemon src/server.js",
     "prestart": "node scripts/ensure-prisma-client.js && node scripts/copy-public-assets.js",
     "build": "node scripts/run-with-root-env.js prisma generate && node scripts/copy-public-assets.js",
+    "build:hostinger": "npm run build && npm run db:push && npm run seed",
     "start": "node src/server.js",
     "seed": "node src/seed.js",
     "db:generate": "node scripts/run-with-root-env.js prisma generate",
@@ -32,8 +33,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@prisma/client": "^6.4.1",
-    "prisma": "^6.4.1",
+    "@prisma/client": "6.19.2",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.104.0",
     "bcryptjs": "^2.4.3",
@@ -48,6 +48,7 @@
     "mercadopago": "^2.12.0",
     "morgan": "^1.10.1",
     "multer": "^1.4.5-lts.1",
+    "prisma": "6.19.2",
     "slugify": "^1.6.6",
     "xss": "^1.0.15"
   },

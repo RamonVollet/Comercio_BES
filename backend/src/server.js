@@ -12,6 +12,7 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 
 const errorHandler = require('./middleware/errorHandler');
+const { getDatabaseHealth } = require('./lib/dbHealth');
 const { authByCookie } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 const comerciosRoutes = require('./routes/comercios');
@@ -251,10 +252,28 @@ app.get('/api', (req, res) => {
       pagamentos: '/api/pagamentos',
       upload: '/api/upload',
       estatisticas: '/api/estatisticas',
+      health: '/api/health',
       admin: '/admin',
       painel: '/painel'
     }
   });
+});
+
+// Health check com diagnostico seguro do banco
+app.get('/api/health', async (req, res, next) => {
+  try {
+    const db = await getDatabaseHealth();
+    res.status(db.ok ? 200 : 503).json({
+      status: db.ok ? 'ok' : 'degraded',
+      api: 'ok',
+      database: db.database,
+      elapsedMs: db.elapsedMs,
+      databaseUrl: db.databaseUrl,
+      ...(db.ok ? {} : { code: db.code, error: db.error }),
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // --- Error Handler ---
