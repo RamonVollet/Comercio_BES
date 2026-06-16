@@ -3,17 +3,27 @@
 
 // ===== API =====
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '']);
-const PROD_HOSTS = new Set(['comerciobes.com.br', 'www.comerciobes.com.br']);
-const IS_PROD_HOST = PROD_HOSTS.has(window.location.hostname);
+const SITE_HOSTS = new Set(['comerciobes.com.br', 'www.comerciobes.com.br']);
+const API_HOSTS = new Set(['api.comerciobes.com.br']);
+const IS_SITE_HOST = SITE_HOSTS.has(window.location.hostname);
+const IS_API_HOST = API_HOSTS.has(window.location.hostname);
 const configuredApiBase = window.BES_API_BASE;
 
 export const API_BASE = configuredApiBase
   ? configuredApiBase.replace(/\/$/, '')
-  : IS_PROD_HOST
-    ? window.location.origin + '/api'
-    : (window.location.port === '3000'
+  : IS_SITE_HOST
+    ? 'https://api.comerciobes.com.br/api'
+    : (IS_API_HOST || window.location.port === '3000'
         ? window.location.origin + '/api'
         : 'http://localhost:3000/api');
+
+export const API_ORIGIN = API_BASE.replace(/\/api$/, '');
+
+export const PANEL_URL = (window.BES_PANEL_URL || (
+  API_ORIGIN === window.location.origin
+    ? '/minha-conta'
+    : API_ORIGIN + '/minha-conta'
+)).replace(/\/$/, '');
 
 // Em dev local, permite fallback para data/data.json quando API estiver offline.
 // Em ambientes remotos, evita mascarar problemas de integração.

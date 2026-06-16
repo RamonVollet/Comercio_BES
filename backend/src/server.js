@@ -254,8 +254,7 @@ app.get('/api', (req, res) => {
       upload: '/api/upload',
       estatisticas: '/api/estatisticas',
       health: '/api/health',
-      admin: '/admin',
-      painel: '/painel'
+      painel: '/minha-conta'
     }
   });
 });

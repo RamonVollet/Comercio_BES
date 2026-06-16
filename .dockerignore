@@ -1,0 +1,13 @@
+.git
+.github
+.claude
+node_modules
+backend/node_modules
+backend/public
+backend/uploads/*
+backups/*
+.env
+.env.*
+*.log
+*.db
+*.db-journal

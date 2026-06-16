@@ -52,8 +52,21 @@ async function seed() {
   });
   console.log(`   Admin criado: ${admin.email}`);
 
-  // 2. Criar usuario comerciante demo
-  console.log('2. Criando usuario comerciante demo...');
+  // 2. Criar usuarios comerciantes demo
+  console.log('2. Criando usuarios comerciantes demo...');
+  const senhaLojista = await bcrypt.hash('lojista123', 12);
+  const lojista = await prisma.user.upsert({
+    where: { email: 'lojista@comerciobes.com' },
+    update: {},
+    create: {
+      nome: 'Lojista Demo',
+      email: 'lojista@comerciobes.com',
+      senha: senhaLojista,
+      tipo: 'comerciante'
+    }
+  });
+  console.log(`   Lojista demo: ${lojista.email}`);
+
   const senhaDemo = await bcrypt.hash('demo123', 12);
   const comerciante = await prisma.user.upsert({
     where: { email: 'comerciante@demo.com' },
@@ -65,7 +78,7 @@ async function seed() {
       tipo: 'comerciante'
     }
   });
-  console.log(`   Comerciante demo: ${comerciante.email}`);
+  console.log(`   Alias demo: ${comerciante.email}`);
 
   // 3. Criar categorias
   console.log('3. Criando categorias...');
@@ -103,6 +116,8 @@ async function seed() {
       continue;
     }
 
+    const ownerId = c.slug === 'aquaflora-groshop' ? lojista.id : admin.id;
+
     // Criar ou atualizar comercio
     const comercio = await prisma.comercio.upsert({
       where: { slug: c.slug },
@@ -121,7 +136,7 @@ async function seed() {
         fotos: JSON.stringify(c.fotos || []),
         visitas: c.visitas || 0,
         recomendados: c.recomendados || 0,
-        ownerId: admin.id
+        ownerId
       },
       create: {
         slug: c.slug,
@@ -139,7 +154,7 @@ async function seed() {
         fotos: JSON.stringify(c.fotos || []),
         visitas: c.visitas || 0,
         recomendados: c.recomendados || 0,
-        ownerId: admin.id
+        ownerId
       }
     });
 

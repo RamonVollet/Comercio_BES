@@ -1,34 +1,44 @@
 # Comercio BES
 
-Guia comercial local de Boa Esperanca do Sul - SP.
+Guia comercial e marketplace local de Boa Esperanca do Sul - SP.
 
-O foco atual e colocar o site em producao com estabilidade. Marketplace, PIX e dashboard avancado ficam depois que vitrine, login e painel basico estiverem firmes.
+## Decisao atual
 
-## Stack atual
+Rodar a API em servidor local com Docker agora e migrar para VPS depois. O dominio da API ja deve ser definitivo:
+
+```txt
+https://api.comerciobes.com.br
+```
+
+Assim a migracao futura troca DNS e restaura backup, sem mudar o frontend.
+
+## Stack
 
 - Frontend: HTML, CSS e JavaScript vanilla.
 - Backend: Node.js + Express.
-- Banco: PostgreSQL Supabase via Prisma.
-- Deploy: Hostinger Node.js App com diretorio raiz `backend`.
+- Banco: PostgreSQL 16 via Prisma.
+- Proxy/SSL: Caddy.
+- Cache/fila futura: Redis.
+- Deploy: Docker Compose.
 
-## O que funciona agora
+## Subir com Docker
 
-- Site publico.
-- API em `/api`.
-- Lista de comercios e categorias.
-- Fallback publico via `data/data.json` se o Supabase falhar.
-- Login/cadastro/painel quando `DATABASE_URL`, `DIRECT_URL` e `JWT_SECRET` estao corretos.
+Crie `.env` a partir de `.env.example` e troque senhas/chaves.
 
-## O que ainda nao e prioridade
+```bash
+docker compose up -d postgres redis
+docker compose run --rm api npm run db:push
+docker compose run --rm api npm run seed
+docker compose up -d
+```
 
-- Checkout completo.
-- PIX em producao.
-- Dashboard avancado.
-- CI/CD completo.
+URLs:
 
-## Rodar local
+- API: `https://api.comerciobes.com.br/api`
+- Health: `https://api.comerciobes.com.br/api/health`
+- Painel: `https://api.comerciobes.com.br/minha-conta`
 
-Crie `.env` na raiz a partir de `.env.example`.
+## Desenvolvimento sem Docker
 
 ```bash
 cd backend
@@ -40,57 +50,15 @@ npm run dev
 
 URLs locais:
 
-- Site: `http://localhost:3000`
-- API: `http://localhost:3000/api`
-- Health: `http://localhost:3000/api/health`
+- Site/API: `http://localhost:3000`
 - Painel: `http://localhost:3000/minha-conta`
 
-## Deploy Hostinger
-
-Configuracao da aplicacao:
-
-```txt
-Framework: Express
-Branch: main
-Diretorio raiz: backend
-Gerenciador de pacotes: npm
-Arquivo de entrada: src/server.js
-Node: 20.x
-```
-
-Variaveis principais:
-
-```env
-NODE_ENV=production
-DATABASE_URL=postgresql://postgres.PROJECT_REF:SENHA@aws-1-us-east-2.pooler.supabase.com:6543/postgres?pgbouncer=true
-DIRECT_URL=postgresql://postgres.PROJECT_REF:SENHA@aws-1-us-east-2.pooler.supabase.com:5432/postgres
-JWT_SECRET=uma-chave-longa-real
-FRONTEND_URL=https://comerciobes.com.br
-WEBHOOK_BASE_URL=https://comerciobes.com.br
-COOKIE_DOMAIN=
-PRISMA_CLIENT_ENGINE_TYPE=binary
-```
-
-Nao defina `PORT` manualmente na Hostinger.
-
-Fallback temporario para ver menus sem banco:
-
-```env
-AUTH_FALLBACK_ENABLED=true
-```
-
-Credenciais demo:
+## Credenciais seed
 
 - Admin: `admin@comerciobes.com` / `admin123`
 - Lojista: `lojista@comerciobes.com` / `lojista123`
 - Alias lojista: `comerciante@demo.com` / `demo123`
 
-## Diagnostico
+## Docs importantes
 
-`/api` deve responder JSON da API.
-
-`/api/health` deve responder `database: "reachable"` para login e painel funcionarem.
-
-`/api/comercios?limit=3` deve responder dados. Se vier com header `X-Data-Source: data-json`, a vitrine esta usando fallback porque o banco falhou.
-
-Mais detalhes em `docs/PRODUCAO.md`.
+- Operacao, backup e migracao: `docs/OPERACAO.md`

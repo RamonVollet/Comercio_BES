@@ -25,6 +25,10 @@ backend/public/
 backend/uploads/*
 !backend/uploads/.gitkeep
 
+# Database backups (keep folder, ignore dumps)
+backups/*
+!backups/.gitkeep
+
 # Python
 __pycache__/
 *.pyc

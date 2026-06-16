@@ -653,7 +653,7 @@
           return;
         }
         localStorage.setItem('skipWelcome', 'true');
-        window.location.href = '/minha-conta';
+        window.location.href = Auth.getPanelUrl();
       }).catch(err => {
         mostrarErro('c-email', 'Erro: ' + err.message);
       });
@@ -691,7 +691,7 @@
           return;
         }
         localStorage.setItem('skipWelcome', 'true');
-        window.location.href = '/minha-conta';
+        window.location.href = Auth.getPanelUrl();
       }).catch(err => {
         mostrarErro('l-email', 'Erro: ' + err.message);
       });

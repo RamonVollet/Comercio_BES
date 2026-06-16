@@ -10,8 +10,7 @@ Guia comercial + marketplace local para **Boa Esperança do Sul — SP**. Conect
 |--------|-----------|
 | Frontend | HTML5 + CSS3 + JS vanilla (PWA) |
 | Backend | Node.js + Express.js |
-| Banco (dev) | SQLite via Prisma ORM |
-| Banco (prod) | PostgreSQL — Supabase |
+| Banco | PostgreSQL 16 via Prisma ORM |
 | Auth | JWT (HS256) + bcrypt |
 | Upload | Multer (local) + Cloudinary (opcional) |
 | Segurança | Helmet, CSP, CORS allowlist, rate-limiting |
@@ -31,7 +30,7 @@ backend/           → API Express
   painel/          → painel do comerciante (/painel)
   prisma/
     schema.prisma  → 10 modelos: User, Categoria, Comercio, Produto, Promocao, Avaliacao, Estatistica, Pedido, ItemPedido, Pagamento
-docs/              → contexto.md, roadmap.md, security-audit.md, skills.md
+docs/              → OPERACAO.md
 ```
 
 ## Comandos úteis
@@ -47,6 +46,15 @@ npm run setup        # install + migrate + seed (primeira vez)
 
 Frontend: abrir `index.html` diretamente ou `npx serve . -p 8080` na raiz.
 
+Docker local/producao:
+
+```bash
+docker compose up -d postgres redis
+docker compose run --rm api npm run db:push
+docker compose run --rm api npm run seed
+docker compose up -d
+```
+
 ## Credenciais de teste (seed)
 
 - Admin: `admin@comerciobes.com` / `admin123`
@@ -55,7 +63,7 @@ Frontend: abrir `index.html` diretamente ou `npx serve . -p 8080` na raiz.
 ## Roles
 
 - `admin` — acesso total, painel em `/admin`
-- `comerciante` — gerencia própria loja, painel em `/painel`
+- `comerciante` — gerencia própria loja, painel em `/minha-conta`
 - `cliente` — avalia, faz pedidos
 
 ## Branch strategy
@@ -68,10 +76,16 @@ Codex/* → worktrees do Codex (merge na dev ao final da sessão)
 
 ## Deploy alvo
 
-- **Frontend:** Hostinger Business (site estático)
-- **Backend:** Hostinger Business (Node.js gerenciado — 5 apps disponíveis)
-- **Banco:** Supabase (PostgreSQL, 2º projeto na conta existente)
-- **Imagens:** Supabase Storage ou Cloudinary
+- **Frontend:** Hostinger Business ou site estatico equivalente
+- **Backend:** servidor local via Docker Compose agora; VPS KVM 2/4 depois
+- **Banco:** PostgreSQL em volume Docker, com backup SQL diario em `backups/`
+- **Imagens:** upload local persistente em `backend/uploads` ou Cloudinary
+
+Dominio da API/painel:
+
+```txt
+https://api.comerciobes.com.br
+```
 
 ## Fase atual
 
@@ -88,6 +102,5 @@ Concluída em março/2026. **43 vulnerabilidades corrigidas** (4 críticas, 8 al
 
 ## O que ainda não existe
 
-- Testes automatizados (zero cobertura — primeira prioridade técnica)
 - CI/CD (deploy manual por enquanto)
-- Docker
+- CI/CD completo

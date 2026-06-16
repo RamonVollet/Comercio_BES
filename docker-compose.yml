@@ -1,0 +1,91 @@
+services:
+  caddy:
+    image: caddy:2.8
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      API_DOMAIN: ${API_DOMAIN:-api.comerciobes.com.br}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-comerciobes}:${POSTGRES_PASSWORD:-troque-esta-senha}@postgres:5432/${POSTGRES_DB:-comerciobes}?schema=public
+      DIRECT_URL: postgresql://${POSTGRES_USER:-comerciobes}:${POSTGRES_PASSWORD:-troque-esta-senha}@postgres:5432/${POSTGRES_DB:-comerciobes}?schema=public
+      REDIS_URL: redis://redis:6379
+      FRONTEND_URL: ${FRONTEND_URL:-https://comerciobes.com.br}
+      WEBHOOK_BASE_URL: https://${API_DOMAIN:-api.comerciobes.com.br}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-.comerciobes.com.br}
+      PRISMA_CLIENT_ENGINE_TYPE: binary
+    volumes:
+      - ./backend/uploads:/app/uploads
+
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-comerciobes}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-troque-esta-senha}
+      POSTGRES_DB: ${POSTGRES_DB:-comerciobes}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  postgres_test:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-comerciobes}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-troque-esta-senha}
+      POSTGRES_DB: ${POSTGRES_TEST_DB:-comerciobes_test}
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+
+  db-backup:
+    image: postgres:16
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-comerciobes}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-troque-esta-senha}
+      POSTGRES_DB: ${POSTGRES_DB:-comerciobes}
+    volumes:
+      - ./backups:/backups
+    entrypoint: /bin/sh
+    command: >
+      -c 'while true; do
+        ts=$$(date +%F_%H-%M-%S);
+        echo "Criando backup /backups/comerciobes-$${ts}.sql";
+        PGPASSWORD="$${POSTGRES_PASSWORD}" pg_dump -h postgres -U "$${POSTGRES_USER}" "$${POSTGRES_DB}" > "/backups/comerciobes-$${ts}.sql";
+        find /backups -type f -name "comerciobes-*.sql" -mtime +14 -delete;
+        sleep 86400;
+      done'
+
+volumes:
+  caddy_data:
+  caddy_config:
+  postgres_data:
+  postgres_test_data:

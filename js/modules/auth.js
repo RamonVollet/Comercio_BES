@@ -1,7 +1,7 @@
 // ===== COMÉRCIO BES — AUTH MODULE =====
 // Gerencia sessão, login, registro e logout.
 
-import { API_BASE } from '../config.js';
+import { API_BASE, PANEL_URL } from '../config.js';
 import { KEYS } from '../config.js';
 import { storageGet, storageSet } from './utils.js';
 import { state } from './state.js';
@@ -15,6 +15,8 @@ export const Auth = {
   isLoggedIn() { return !!this.getSession(); },
 
   getUser() { return this.getSession(); },
+
+  getPanelUrl() { return PANEL_URL; },
 
   async register(nome, email, tel, senha, tipo, dadosLoja = null) {
     try {

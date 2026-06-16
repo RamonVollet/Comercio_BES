@@ -480,7 +480,7 @@
         localStorage.setItem('skipWelcome', 'true');
         // Usar setTimeout breve evita race conditions no redirectionamento visual
         setTimeout(() => {
-          window.location.href = '/minha-conta';
+          window.location.href = Auth.getPanelUrl();
         }, 100);
 
       } catch (err) {
