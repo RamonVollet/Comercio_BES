@@ -72,32 +72,40 @@ async function carregarEstoque(container, ctx) {
       return;
     }
 
-    el.innerHTML = catalogo.map(p => `
+    const canMutate = !ctx.fallbackAuth;
+
+    el.innerHTML = catalogo.map(p => {
+      const disponivel = p.disponivel !== false;
+      const produtoId = p.id ?? '';
+      return `
       <div class="estoque-item">
         <div>
           <p class="prod-nome">${esc(p.nome_produto || p.nome)}</p>
           <p class="prod-preco">R$ ${p.preco.toFixed(2).replace('.', ',')}</p>
         </div>
         <label class="switch" title="Ativar/Desativar produto">
-          <input type="checkbox" class="toggle-disponivel" data-id="${p.id}" ${p.disponivel ? 'checked' : ''}>
+          <input type="checkbox" class="toggle-disponivel" data-id="${produtoId}" ${disponivel ? 'checked' : ''} ${canMutate && produtoId ? '' : 'disabled'}>
           <span class="slider"></span>
         </label>
       </div>
-    `).join('');
+    `;
+    }).join('');
 
-    el.querySelectorAll('.toggle-disponivel').forEach(chk => {
-      chk.addEventListener('change', async (e) => {
-        const id = e.target.dataset.id;
-        const disponivel = e.target.checked;
-        try {
-          await fetch(`/api/comercios/${storeObj.slug}/produtos/${id}`, {
-            method: 'PUT', credentials: 'include',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': ctx.csrfToken },
-            body: JSON.stringify({ disponivel })
-          });
-        } catch { alert('Erro de rede ao salvar alteração'); }
+    if (canMutate) {
+      el.querySelectorAll('.toggle-disponivel').forEach(chk => {
+        chk.addEventListener('change', async (e) => {
+          const id = e.target.dataset.id;
+          const disponivel = e.target.checked;
+          try {
+            await fetch(`/api/comercios/${storeObj.slug}/produtos/${id}`, {
+              method: 'PUT', credentials: 'include',
+              headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': ctx.csrfToken },
+              body: JSON.stringify({ disponivel })
+            });
+          } catch { alert('Erro de rede ao salvar alteração'); }
+        });
       });
-    });
+    }
 
   } catch {
     el.innerHTML = '<div class="section-error"><h2>Erro ao carregar estoque</h2></div>';

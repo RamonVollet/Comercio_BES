@@ -72,6 +72,12 @@ export function mount(container, ctx) {
     return;
   }
 
+  if (ctx.fallbackAuth) {
+    const btnNovoProduto = container.querySelector('#btn-novo-produto');
+    btnNovoProduto.disabled = true;
+    btnNovoProduto.title = 'Modo demo: configure PostgreSQL para cadastrar produtos.';
+  }
+
   carregarProdutos(container, ctx);
 
   const btnNovo = container.querySelector('#btn-novo-produto');
@@ -103,52 +109,62 @@ async function carregarProdutos(container, ctx) {
       return;
     }
 
+    const canMutate = !ctx.fallbackAuth;
+
     el.innerHTML = `
       <div class="produtos-grid">
-        ${catalogo.map(p => `
+        ${catalogo.map(p => {
+          const disponivel = p.disponivel !== false;
+          const produtoId = p.id ?? '';
+          return `
           <div class="produto-card">
             <div>
               <div class="produto-header">
                 <h3 class="produto-nome">${esc(p.nome_produto || p.nome)}</h3>
-                <span class="produto-status ${p.disponivel ? 'status-ativo' : 'status-inativo'}">${p.disponivel ? 'Ativo' : 'Inativo'}</span>
+                <span class="produto-status ${disponivel ? 'status-ativo' : 'status-inativo'}">${disponivel ? 'Ativo' : 'Inativo'}</span>
               </div>
               <p class="produto-desc">${esc(p.descricao) || 'Sem descrição'}</p>
             </div>
             <div class="produto-footer">
               <span class="produto-preco">${formatMoney(p.preco)}</span>
+              ${canMutate && produtoId ? `
               <div class="produto-acoes">
-                <button class="btn-link btn-editar" data-id="${p.id}">Editar</button>
-                <button class="btn-link danger btn-excluir" data-id="${p.id}">Excluir</button>
+                <button class="btn-link btn-editar" data-id="${produtoId}">Editar</button>
+                <button class="btn-link danger btn-excluir" data-id="${produtoId}">Excluir</button>
               </div>
+              ` : ''}
             </div>
           </div>
-        `).join('')}
+        `;
+        }).join('')}
       </div>
     `;
 
-    // Editar
-    el.querySelectorAll('.btn-editar').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const produto = catalogo.find(p => String(p.id) === btn.dataset.id);
-        if (produto) mostrarFormulario(container, ctx, produto);
+    if (canMutate) {
+      // Editar
+      el.querySelectorAll('.btn-editar').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const produto = catalogo.find(p => String(p.id) === btn.dataset.id);
+          if (produto) mostrarFormulario(container, ctx, produto);
+        });
       });
-    });
 
-    // Deletar
-    el.querySelectorAll('.btn-excluir').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (!confirm('Excluir produto?')) return;
-        try {
-          const res = await fetch(`/api/comercios/${storeObj.slug}/produtos/${btn.dataset.id}`, {
-            method: 'DELETE',
-            credentials: 'include',
-            headers: { 'X-CSRF-Token': ctx.csrfToken }
-          });
-          if (res.ok) carregarProdutos(container, ctx);
-          else alert('Erro ao excluir');
-        } catch { alert('Erro de rede'); }
+      // Deletar
+      el.querySelectorAll('.btn-excluir').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Excluir produto?')) return;
+          try {
+            const res = await fetch(`/api/comercios/${storeObj.slug}/produtos/${btn.dataset.id}`, {
+              method: 'DELETE',
+              credentials: 'include',
+              headers: { 'X-CSRF-Token': ctx.csrfToken }
+            });
+            if (res.ok) carregarProdutos(container, ctx);
+            else alert('Erro ao excluir');
+          } catch { alert('Erro de rede'); }
+        });
       });
-    });
+    }
 
   } catch {
     el.innerHTML = '<div class="section-error"><h2>Erro ao carregar catálogo</h2></div>';
@@ -156,6 +172,11 @@ async function carregarProdutos(container, ctx) {
 }
 
 function mostrarFormulario(container, ctx, produto) {
+  if (ctx.fallbackAuth) {
+    alert('Modo demo: produtos do data.json sao somente leitura. Configure PostgreSQL para salvar alteracoes.');
+    return;
+  }
+
   const formEl = container.querySelector('#produto-form-container');
   const storeObj = ctx.stores.find(s => s.id === ctx.activeStoreId);
   if (!storeObj) {

@@ -19,7 +19,7 @@ const fallbackUsers = [
     senha: 'lojista123',
     tipo: 'comerciante',
     nomeFantasia: 'Loja Demo',
-    stores: [{ id: 9001, nome: 'Loja Demo', slug: 'aquaflora-agroshop' }]
+    stores: [{ id: 9001, nome: 'Loja Demo', slug: 'aquaflora-groshop' }]
   },
   {
     id: 9003,
@@ -28,7 +28,7 @@ const fallbackUsers = [
     senha: 'demo123',
     tipo: 'comerciante',
     nomeFantasia: 'Comerciante Demo',
-    stores: [{ id: 9001, nome: 'Loja Demo', slug: 'aquaflora-agroshop' }]
+    stores: [{ id: 9001, nome: 'Loja Demo', slug: 'aquaflora-groshop' }]
   }
 ];
 

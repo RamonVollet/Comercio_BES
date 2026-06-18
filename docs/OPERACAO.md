@@ -65,6 +65,28 @@ Alias lojista: comerciante@demo.com / demo123
 
 O lojista seed fica vinculado a uma loja demo para o dashboard abrir com contexto de loja.
 
+## Rodar local sem Docker instalado
+
+Este modo serve apenas para validar vitrine, login demo e navegacao do painel. Ele nao substitui PostgreSQL: cadastro real, pedidos, edicao de produtos e persistencia dependem do banco.
+
+```powershell
+cd backend
+$env:NODE_ENV="development"
+$env:AUTH_FALLBACK_ENABLED="true"
+$env:PORT="3000"
+node src/server.js
+```
+
+URLs locais:
+
+```txt
+http://localhost:3000
+http://localhost:3000/api/health
+http://localhost:3000/minha-conta
+```
+
+Se `/api/health` retornar `database: "unreachable"`, a API ainda pode mostrar a vitrine via `data/data.json`, mas o banco precisa ser corrigido antes de usar o sistema de verdade.
+
 ## Backup
 
 O servico `db-backup` cria um arquivo SQL por dia em `backups/` e apaga dumps com mais de 14 dias.

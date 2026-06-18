@@ -36,7 +36,7 @@ const SITE_USERNAME = process.env.SITE_USERNAME || 'comerciobes';
 const SITE_PASSWORD = process.env.SITE_PASSWORD || '';
 
 function privateSiteGate(req, res, next) {
-  if (!SITE_PASSWORD || process.env.NODE_ENV === 'test') return next();
+  if (!SITE_PASSWORD || process.env.NODE_ENV !== 'production') return next();
   if (req.path === '/api/pagamentos/webhook') return next();
 
   const header = req.headers.authorization || '';

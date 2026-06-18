@@ -74,6 +74,10 @@ body {
   display: none;
 }
 
+.hidden {
+  display: none !important;
+}
+
 body {
   display: grid;
   grid-template-columns: var(--sidebar-w) 1fr;

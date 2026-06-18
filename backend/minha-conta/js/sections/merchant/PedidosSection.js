@@ -90,6 +90,15 @@ export function mount(container, ctx) {
     return;
   }
 
+  if (ctx.fallbackAuth) {
+    container.querySelector('#pedidos-list').innerHTML = `
+      <div class="section-empty">
+        <h2>Nenhum pedido</h2>
+        <p>Modo demo sem banco: os pedidos reais aparecem depois que o PostgreSQL estiver configurado.</p>
+      </div>`;
+    return;
+  }
+
   carregarPedidos(container, ctx, 1);
 
   const filtro = container.querySelector('#filtro-status');
